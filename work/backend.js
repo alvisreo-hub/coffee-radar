@@ -18,14 +18,42 @@ async function fetchSource(url,host){let current=new URL(url);for(let i=0;i<3;i+
 const decode=s=>s.replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&#(\d+);/g,(_,n)=>{let v=Number(n);return v<=0x10ffff?String.fromCodePoint(v):''}).replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim();
 export function metadata(html){let title=html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]||'';let description='';for(const match of html.matchAll(/<meta\b[^>]*>/gi)){const tag=match[0];if(/(?:name|property)\s*=\s*["'](?:description|og:description)["']/i.test(tag)){const content=tag.match(/content\s*=\s*(["'])([\s\S]*?)\1/i);if(content){description=content[2];break}}}return {title:decode(title).slice(0,180),description:decode(description).slice(0,240)}}
 async function crawlOne(source){try{const u=new URL(source.url);const robots=await fetchSource(u.origin+'/robots.txt',u.hostname);if(robots.status!==404){if(!robots.ok)throw new Error('robots.txt tidak dapat diperiksa (HTTP '+robots.status+').');const text=await textLimited(robots,150000);if(!robotsAllows(text,u.pathname))throw new Error('Sumber melarang crawler melalui robots.txt.')}let r=await fetchSource(source.url,u.hostname);if(!r.ok)throw new Error('Sumber merespons HTTP '+r.status+'.');const type=r.headers.get('content-type')||'';if(!type.includes('text/html'))throw new Error('Sumber tidak mengembalikan halaman HTML.');const m=metadata(await textLimited(r));return {name:source.name,url:source.url,ok:true,...m,fetchedAt:new Date().toISOString()}}catch(e){return {name:source.name,url:source.url,ok:false,error:e.message,fetchedAt:new Date().toISOString()}}}
-export function normalizeOSM(elements){return elements.filter(e=>e.tags?.name&&Number.isFinite(e.lat??e.center?.lat)&&Number.isFinite(e.lon??e.center?.lon)).slice(0,60).map(e=>{const t=e.tags,lat=e.lat??e.center.lat,lng=e.lon??e.center.lon;return {id:'osm-'+e.type+'-'+e.id,name:t.name.slice(0,150),area:'Bandung',address:[t['addr:street'],t['addr:housenumber'],t['addr:suburb']].filter(Boolean).join(' ')||'Bandung — alamat rinci perlu dikonfirmasi',tags:['Data komunitas',...(t.outdoor_seating==='yes'?['Area luar']:[]),...(t.internet_access==='wlan'?['Wi-Fi tercatat']:[])],menu:'Menu belum tersedia',note:'Ditemukan di OpenStreetMap. Informasi berasal dari kontributor komunitas dan belum ditinjau kurator.',reason:'Belum direkomendasikan oleh kurator. Periksa nama, cabang, fasilitas, dan lokasi sebelum berkunjung.',category:'unreviewed',uncurated:true,source:'https://www.openstreetmap.org/'+e.type+'/'+e.id,sourceName:'OpenStreetMap',rating:null,reviews:null,lat,lng,importedAt:new Date().toISOString()}})}
+export function normalizeOSM(elements){return elements.filter(e=>e.tags?.name&&Number.isFinite(e.lat??e.center?.lat)&&Number.isFinite(e.lon??e.center?.lon)).map(e=>{const t=e.tags,lat=e.lat??e.center.lat,lng=e.lon??e.center.lon;return {id:'osm-'+e.type+'-'+e.id,name:t.name.slice(0,150),area:'Bandung',address:[t['addr:street'],t['addr:housenumber'],t['addr:suburb']].filter(Boolean).join(' ')||'Bandung — alamat rinci perlu dikonfirmasi',tags:['Data komunitas',...(t.outdoor_seating==='yes'?['Area luar']:[]),...(t.internet_access==='wlan'?['Wi-Fi tercatat']:[])],menu:'Menu belum tersedia',note:'Ditemukan di OpenStreetMap. Informasi berasal dari kontributor komunitas dan belum ditinjau kurator.',reason:'Belum direkomendasikan oleh kurator. Periksa nama, cabang, fasilitas, dan lokasi sebelum berkunjung.',category:'unreviewed',uncurated:true,source:'https://www.openstreetmap.org/'+e.type+'/'+e.id,sourceName:'OpenStreetMap',rating:null,reviews:null,lat,lng,importedAt:new Date().toISOString()}})}
 async function cachedJSON(request,ttl,produce){const cache=globalThis.caches?.default;const key=new Request(new URL(request.url).origin+new URL(request.url).pathname,{method:'GET'});if(cache){const hit=await cache.match(key);if(hit)return hit}const data=await produce();const response=json(data);response.headers.set('Cache-Control','private, max-age=0');if(cache){const copy=json(data);copy.headers.set('Cache-Control','public, max-age='+ttl);await cache.put(key,copy)}return response}
+const CATALOG_CSV_URL = 'https://raw.githubusercontent.com/alvisreo-hub/coffee-radar/main/data/scrapes/latest.csv';
+let catalogMemory;
+let catalogLoading;
+export async function fetchCsvCatalog(fetchImpl = fetch) {
+ const response = await fetchImpl(CATALOG_CSV_URL, {signal:AbortSignal.timeout(10000),headers:{Accept:'text/csv,text/plain'},cf:{cacheTtl:600,cacheEverything:true}});
+ if (!response.ok) throw new Error('CSV source returned HTTP ' + response.status);
+ const csv = await textLimited(response, 64000000);
+ const catalog = catalogFromCsv(SEED, csv);
+ if (!catalog.csvRowCount) throw new Error('CSV source has no valid locations.');
+ return {...catalog,csv,sourceStatus:'live_csv',city:'Bandung',reviewedAt:'2026-10-19'};
+}
+async function getCsvCatalog(env = {}) {
+ if (env.CATALOG_OFFLINE) return {...BUNDLED_CATALOG,csv:BUNDLED_CSV,sourceStatus:'bundled_csv',city:'Bandung',reviewedAt:'2026-10-19'};
+ if (catalogMemory?.expiresAt > Date.now()) return catalogMemory.data;
+ if (catalogLoading) return catalogLoading;
+ catalogLoading = (async()=>{
+  try {
+   const data = await fetchCsvCatalog();
+   catalogMemory={data,expiresAt:Date.now()+600000};return data;
+  } catch {
+   const data={...(catalogMemory?.data||BUNDLED_CATALOG),csv:catalogMemory?.data?.csv||BUNDLED_CSV,sourceStatus:'bundled_csv',warning:'Sumber CSV belum dapat dihubungi. Menampilkan salinan terakhir yang tersedia.',city:'Bandung',reviewedAt:'2026-10-19'};
+   catalogMemory={data,expiresAt:Date.now()+60000};return data;
+  } finally {catalogLoading=null;}
+ })();
+ return catalogLoading;
+}
+
 const SECURITY={'Content-Type':'text/html; charset=utf-8','X-Content-Type-Options':'nosniff','Referrer-Policy':'strict-origin-when-cross-origin','Permissions-Policy':'camera=(), microphone=(), geolocation=()','Content-Security-Policy':"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self'; img-src 'self' https://images.unsplash.com data:; connect-src 'self'; frame-src https://www.openstreetmap.org; object-src 'none'; base-uri 'none'; form-action 'self'"};
 export default {async fetch(request,env={}){const url=new URL(request.url),path=url.pathname;try{
  if(path.startsWith('/api/')){
   if(request.method==='OPTIONS')return new Response(null,{status:204});
   if(path==='/api/status'&&request.method==='GET')return json({google:Boolean(env.GOOGLE_PLACES_API_KEY),instagram:false,tiktok:false,osm:true,web:true});
-  if(path==='/api/catalog'&&request.method==='GET')return json({city:'Bandung',reviewedAt:'2026-10-19',shops:SEED});
+  if(path==='/api/catalog'&&request.method==='GET'){const {csv,...catalog}=await getCsvCatalog(env);return json(catalog);}
+  if(path==='/api/catalog.csv'&&request.method==='GET'){const catalog=await getCsvCatalog(env);return new Response(catalog.csv,{headers:{'Content-Type':'text/csv; charset=utf-8','Content-Disposition':'attachment; filename=coffee-in-bandung.csv','Cache-Control':'no-store','X-Catalog-Source':catalog.sourceStatus}});}
   if(request.method!=='POST')return json({error:'Metode tidak didukung.'},405);
   const origin=request.headers.get('Origin');if(origin&&origin!==url.origin)return json({error:'Permintaan harus berasal dari aplikasi ini.'},403);
   if(!(request.headers.get('content-type')||'').includes('application/json'))return json({error:'Gunakan permintaan JSON.'},415);
@@ -33,7 +61,7 @@ export default {async fetch(request,env={}){const url=new URL(request.url),path=
   if(path==='/api/crawl')return await cachedJSON(request,21600,async()=>({results:await Promise.all(SOURCES.map(crawlOne)),provider:'public-web',checkedAt:new Date().toISOString()}));
   if(path==='/api/discover'){
    if(body.city!=='Bandung')return json({error:'Saat ini penemuan hanya tersedia untuk Bandung.'},400);
-   return await cachedJSON(request,21600,async()=>{const query='[out:json][timeout:18];nwr["amenity"="cafe"](-6.970,107.555,-6.845,107.685);out center 100;';let r=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded','User-Agent':headers['User-Agent']},body:new URLSearchParams({data:query}),signal:AbortSignal.timeout(24000)});if(!r.ok)throw new Error('OpenStreetMap belum dapat diakses (HTTP '+r.status+'). Coba lagi nanti.');let data=JSON.parse(await textLimited(r,1500000));return {shops:normalizeOSM(data.elements||[]),provider:'OpenStreetMap contributors (ODbL)',fetchedAt:new Date().toISOString()}})
+   const {csv,...catalog}=await getCsvCatalog(env);return json({...catalog,provider:'OpenStreetMap CSV'});
   }
   if(path==='/api/google'){
    if(!env.GOOGLE_PLACES_API_KEY)return json({error:'Google Places belum terhubung. Tambahkan GOOGLE_PLACES_API_KEY sebagai secret runtime hosting.'},503);

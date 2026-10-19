@@ -19,13 +19,12 @@ Discovery uses OpenStreetMap cafes and coffee shops in Bandung's administrative
 area. If the administrative-area query fails or returns no results, a Bandung bounding box is
 used and every row states that it may include neighboring areas. The keyword is
 mapped to these location categories; this is not a Google search-results scrape.
-Results are uncurated community data. At most 100 locations and 20 distinct
-websites are processed per run. Website enrichment checks robots.txt and records
+Results are uncurated community data. All matching source locations are saved without a result cap, including unnamed cafes. Up to 20 distinct websites are enriched per run; this does not limit CSV rows. Website enrichment checks robots.txt and records
 failures instead of inventing metadata. JavaScript-rendered pages are not rendered.
 
 CSV snapshots are also available as downloadable workflow artifacts for 90 days.
 A failed location-discovery run exits with an error and preserves the previous
 CSV files. Individual business-website failures remain visible in their CSV rows.
-The live app's catalog is not automatically replaced by these uncurated records.
+The website automatically loads every valid row from `latest.csv`, combines it with editorial selections, and marks the imported locations as uncurated. Weekly CSV commits become visible without redeploying; the website caches successful CSV reads for ten minutes.
 
 © OpenStreetMap contributors, [ODbL 1.0](https://www.openstreetmap.org/copyright).

@@ -1,10 +1,16 @@
+import { catalogFromCsv } from '../lib/catalog.mjs';
 import {readFile,writeFile,mkdir,copyFile} from 'node:fs/promises';
 const seed=JSON.parse(await readFile('work/seed.json','utf8'));
-const html=(await readFile('work/index.html','utf8')).replace('__SEED__',JSON.stringify(seed).replace(/</g,'\\u003c'));
+const csv=await readFile('data/scrapes/latest.csv','utf8');
+const catalog=catalogFromCsv(seed,csv);
+if(!catalog.csvRowCount)throw new Error('Cannot build an empty CSV catalog.');
+const scriptJson=value=>JSON.stringify(value).replaceAll('<',String.fromCharCode(92)+'u003c');
+const html=(await readFile('work/index.html','utf8')).replace('__SEED__',scriptJson(catalog.shops)).replace('__CATALOG_META__',scriptJson({...catalog,shops:undefined}));
+const catalogCode=await readFile('lib/catalog.mjs','utf8');
 const backend=await readFile('work/backend.js','utf8');
 const assets={};
 for(const [path,file,type] of [['/assets/coffee-sheet.jpg','assets/coffee-sheet.jpg','image/jpeg'],['/assets/dm-sans.woff2','assets/fonts/dm-sans.woff2','font/woff2'],['/assets/manrope.woff2','assets/fonts/manrope.woff2','font/woff2']])assets[path]={type,data:(await readFile(file)).toString('base64')};
-await writeFile('worker/index.js','const SEED='+JSON.stringify(seed)+';\nconst ASSETS='+JSON.stringify(assets)+';\nconst HTML='+JSON.stringify(html)+';\n'+backend);
+await writeFile('worker/index.js',catalogCode+'\nconst SEED='+JSON.stringify(seed)+';\nconst BUNDLED_CSV='+JSON.stringify(csv)+';\nconst BUNDLED_CATALOG='+JSON.stringify(catalog)+';\nconst ASSETS='+JSON.stringify(assets)+';\nconst HTML='+JSON.stringify(html)+';\n'+backend);
 await mkdir('dist/server',{recursive:true});await mkdir('dist/.openai',{recursive:true});
 await copyFile('worker/index.js','dist/server/index.js');await copyFile('.openai/hosting.json','dist/.openai/hosting.json');
 console.log('Built Coffee Radar Worker with embedded responsive UI and local assets.');
