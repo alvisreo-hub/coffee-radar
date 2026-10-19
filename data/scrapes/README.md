@@ -16,7 +16,7 @@ coordinates, address, business website and phone if listed, opening-hours text,
 source URL, geographic scope, retrieval time, and web scraping outcome.
 
 Discovery uses OpenStreetMap cafes and coffee shops in Bandung's administrative
-area. If no administrative-area results are returned, a Bandung bounding box is
+area. If the administrative-area query fails or returns no results, a Bandung bounding box is
 used and every row states that it may include neighboring areas. The keyword is
 mapped to these location categories; this is not a Google search-results scrape.
 Results are uncurated community data. At most 100 locations and 20 distinct

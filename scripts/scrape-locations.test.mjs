@@ -177,3 +177,16 @@ test('workflow schedules Monday at 08:00 WIB and treats keyword inputs as enviro
   assert.match(workflow, /actions\/upload-artifact/);
   assert.match(workflow, /git add data\/scrapes\/\*\.csv/);
 });
+
+
+test('an administrative-query outage falls back to a bounded query and labels every result', async () => {
+  const queries = [];
+  const rows = await discoverLocations({ now, wait: noWait, fetchImpl: async (_url, options) => {
+    const query = new URLSearchParams(options.body).get('data');
+    queries.push(query);
+    return query.includes('area.bandung') ? new Response('upstream unavailable', { status: 500 }) : Response.json({ elements: [element()] });
+  } });
+  assert.equal(queries.length, 3);
+  assert.equal(rows.length, 1);
+  assert.match(rows[0].geographic_scope, /bounding box/);
+});

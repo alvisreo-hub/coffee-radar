@@ -53,27 +53,32 @@ export async function readBounded(response, maxBytes = 1_000_000) {
   return Buffer.concat(chunks).toString('utf8');
 }
 
-async function overpass(query, { fetchImpl = fetch, wait = sleep } = {}) {
-  let lastError;
+async function overpass(query, { fetchImpl = fetch, wait = sleep, onProgress = () => {} } = {}) {
+  const errors = [];
   for (let i = 0; i < ENDPOINTS.length; i++) {
     try {
+      onProgress('Querying ' + new URL(ENDPOINTS[i]).hostname);
       const response = await fetchImpl(ENDPOINTS[i], {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': USER_AGENT },
         body: new URLSearchParams({ data: query }),
         signal: AbortSignal.timeout(45_000),
       });
-      if (!response.ok) throw new Error('Overpass returned HTTP ' + response.status + '.');
+      if (!response.ok) {
+        const detail = (await readBounded(response, 32_000)).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 400);
+        throw new Error('Overpass returned HTTP ' + response.status + (detail ? ': ' + detail : '.'));
+      }
       const data = JSON.parse(await readBounded(response, 5_000_000));
       if (data.remark) throw new Error('Overpass did not complete the query: ' + data.remark);
       if (!Array.isArray(data.elements)) throw new Error('Overpass returned an invalid locations response.');
       return data.elements;
     } catch (error) {
-      lastError = error;
+      errors.push(new URL(ENDPOINTS[i]).hostname + ': ' + error.message);
+      onProgress(errors.at(-1));
       if (i < ENDPOINTS.length - 1) await wait(2000);
     }
   }
-  throw new Error('Location discovery failed: ' + lastError.message);
+  throw new Error('Location discovery failed: ' + errors.join('; '));
 }
 
 export function normalizeLocations(elements, { keyword = DEFAULT_KEYWORD, now = new Date(), geographicScope = 'Bandung administrative boundary' } = {}) {
@@ -113,13 +118,19 @@ export function normalizeLocations(elements, { keyword = DEFAULT_KEYWORD, now = 
 export async function discoverLocations({ keyword = DEFAULT_KEYWORD, maxResults = 100, now = new Date(), ...options } = {}) {
   validateKeyword(keyword);
   if (!Number.isInteger(maxResults) || maxResults < 1 || maxResults > 1000) throw new Error('maxResults must be between 1 and 1000.');
-  let elements = await overpass(buildOverpassQuery(), options);
+  let elements;
+  let areaError;
   let geographicScope = 'Bandung administrative boundary';
+  try { elements = await overpass(buildOverpassQuery(), options); }
+  catch (error) { areaError = error; elements = []; }
   if (!elements.length) {
-    elements = await overpass(buildOverpassQuery({ fallback: true }), options);
+    options.onProgress?.('Administrative query unavailable or empty; trying the bounded Bandung query.');
+    try { elements = await overpass(buildOverpassQuery({ fallback: true }), options); }
+    catch (error) { throw new Error((areaError ? areaError.message + ' | Bounding-box fallback: ' : '') + error.message); }
     geographicScope = 'Bandung bounding box; may include neighboring areas';
   }
   const rows = normalizeLocations(elements, { keyword: keyword.trim(), now, geographicScope }).slice(0, maxResults);
+  options.onProgress?.('Discovered ' + rows.length + ' locations.');
   if (!rows.length) throw new Error('No valid coffee locations were returned; existing CSV files have been preserved.');
   return rows;
 }
@@ -211,6 +222,7 @@ export async function enrichLocations(rows, { maxWebsites = 20, ...options } = {
     if (!cache.has(row.website)) {
       if (cache.size >= maxWebsites) { row.website_scrape_status = 'budget_exceeded'; continue; }
       cache.set(row.website, await scrapeWebsite(row.website, options));
+      options.onProgress?.('Website ' + cache.size + '/' + maxWebsites + ': ' + cache.get(row.website).website_scrape_status);
     }
     Object.assign(row, cache.get(row.website));
   }
@@ -268,7 +280,7 @@ function parseOptions(args) {
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    const result = await runScrape(parseOptions(process.argv.slice(2)));
+    const result = await runScrape({ ...parseOptions(process.argv.slice(2)), onProgress: message => console.log(message) });
     console.log(JSON.stringify(result, null, 2));
     if (process.env.GITHUB_STEP_SUMMARY) {
       const { appendFile } = await import('node:fs/promises');
