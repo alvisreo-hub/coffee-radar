@@ -1,0 +1,8 @@
+node_modules/
+.sites-runtime/
+.wrangler/
+work/*
+!work/index.html
+!work/backend.js
+!work/seed.json
+dist/

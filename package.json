@@ -1,0 +1,1 @@
+{"name":"coffee-radar-bandung","version":"1.0.0","type":"module","private":true,"scripts":{"build":"node scripts/assemble.mjs","test":"node --test scripts/app.test.mjs","dev":"node scripts/dev.mjs"}}

@@ -1,0 +1,140 @@
+[
+  {
+    "id": "djawa",
+    "name": "Kopi Toko Djawa",
+    "area": "Braga",
+    "address": "Jl. Braga No. 81, Bandung",
+    "tags": [
+      "Jalan-jalan",
+      "Kopi susu",
+      "Heritage"
+    ],
+    "menu": "Es Kopi Toko Djawa",
+    "note": "Singgah sebentar di Braga. Kopi susu gula jawa, suasana toko lama, dan sudut kreatif yang punya cerita.",
+    "reason": "Di koridor Braga, mudah disisipkan ke rute jalan kaki di pusat kota.",
+    "category": "strategis",
+    "source": "https://citour.id/destinations/kopi-toko-djawa-braga-kSSgbjkf",
+    "sourceName": "Citour",
+    "social": "kopitokodjawa",
+    "rating": 4.6,
+    "reviews": 4500,
+    "lat": -6.9173,
+    "lng": 107.6096,
+    "image": "photo-1442512595331-e89e73853f31"
+  },
+  {
+    "id": "sawo",
+    "name": "Sawo Coffee & Roastery",
+    "area": "Braga",
+    "address": "Jl. Braga No. 76, Bandung",
+    "tags": [
+      "Desain menarik",
+      "Jalan-jalan",
+      "Specialty"
+    ],
+    "menu": "Jelajahi racikan kopi",
+    "note": "Ruang yang terang dan arsitektur yang dipikirkan dengan baik. Tempat singgah untuk menikmati sisi lain Braga.",
+    "reason": "Desain ruang menjadi daya tarik; lokasinya berada di pusat kawasan Braga.",
+    "category": "strategis",
+    "source": "https://www.archdaily.com/945628/sawo-coffee-and-roastery-oi-architect",
+    "sourceName": "ArchDaily",
+    "social": "sawo.coffee",
+    "rating": null,
+    "reviews": null,
+    "lat": -6.9171,
+    "lng": 107.6094,
+    "image": "photo-1554118811-1e0d58224f24"
+  },
+  {
+    "id": "noah",
+    "name": "Noah’s Barn",
+    "area": "Dago",
+    "address": "Jl. Dayang Sumbi No. 2, Bandung",
+    "tags": [
+      "Specialty",
+      "Santai",
+      "Brunch"
+    ],
+    "menu": "Eksplorasi manual brew",
+    "note": "Salah satu nama yang dikenal di skena kopi Bandung. Pilihan untuk jeda panjang di kawasan Dayang Sumbi.",
+    "reason": "Pilihan kurator untuk penikmat seduhan dan suasana kafe di utara Bandung.",
+    "category": "rasa",
+    "source": "https://www.tripadvisor.com/Restaurant_Review-g297704-d7797095-Reviews-Noah_s_Barn-Bandung_West_Java_Java.html",
+    "sourceName": "Tripadvisor",
+    "social": "noahsbarn",
+    "rating": null,
+    "reviews": null,
+    "lat": -6.8846,
+    "lng": 107.6136,
+    "image": "photo-1501339847302-ac426a4a7cbb"
+  },
+  {
+    "id": "sejiwa",
+    "name": "Sejiwa Coffee",
+    "area": "Progo",
+    "address": "Jl. Progo No. 15, Bandung",
+    "tags": [
+      "Santai",
+      "Brunch",
+      "Kopi susu"
+    ],
+    "menu": "Tanyakan racikan signature",
+    "note": "Persinggahan di kawasan Progo untuk ngobrol, bertemu teman, dan menikmati ritme Bandung yang lebih pelan.",
+    "reason": "Kawasan Progo dekat dengan berbagai destinasi kuliner dan pusat kota.",
+    "category": "strategis",
+    "source": "https://linktr.ee/sejiwacoffee",
+    "sourceName": "Linktree resmi",
+    "social": "sejiwa.coffee",
+    "rating": null,
+    "reviews": null,
+    "lat": -6.9003,
+    "lng": 107.6184,
+    "image": "photo-1521017432531-fbd92d768814"
+  },
+  {
+    "id": "thf",
+    "name": "Two Hands Full",
+    "area": "Mekar Wangi",
+    "address": "Jl. Mekar Utama I No. 28, Bandung",
+    "tags": [
+      "Specialty",
+      "Roastery",
+      "Biji kopi"
+    ],
+    "menu": "Eksplorasi biji sangrai",
+    "note": "Kenalan lebih dekat dengan kopi melalui roastery lokal. Cocok untuk mencari biji dan mengenal karakter seduhan.",
+    "reason": "Pilihan kurator untuk eksplorasi roasting. Alamat merujuk kontak roastery, konfirmasi layanan dine-in sebelum berangkat.",
+    "category": "rasa",
+    "source": "https://thfcoffee.com/pages/about-us",
+    "sourceName": "Website resmi",
+    "social": "thfcoffee",
+    "rating": null,
+    "reviews": null,
+    "lat": -6.957,
+    "lng": 107.595,
+    "image": "photo-1447933601403-0c6688de566e"
+  },
+  {
+    "id": "5758",
+    "name": "5758 Coffee Lab",
+    "area": "Bandung",
+    "address": "Bandung — cek cabang pada sumber",
+    "tags": [
+      "Specialty",
+      "Belajar kopi",
+      "Manual brew"
+    ],
+    "menu": "Eksplorasi pour over",
+    "note": "Untuk yang ingin mengenal kopi lebih jauh. Mulai dari ragam biji sampai cara seduh yang membuka rasa baru.",
+    "reason": "Ulasan pengunjung membahas ragam kopi dan seduhan manual. Lokasi terkini perlu dikonfirmasi.",
+    "category": "rasa",
+    "source": "https://www.tripadvisor.ca/Restaurant_Review-g297704-d11890841-Reviews-5758_Coffee_Lab-Bandung_West_Java_Java.html",
+    "sourceName": "Tripadvisor",
+    "social": "5758coffeelab",
+    "rating": null,
+    "reviews": null,
+    "lat": null,
+    "lng": null,
+    "image": "photo-1495474472287-4d71bcdd2085"
+  }
+]
