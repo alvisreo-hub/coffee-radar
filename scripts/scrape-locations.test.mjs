@@ -148,7 +148,7 @@ test('CSV escapes quotes, commas, multiline text, formulas and preserves numeric
 test('successful runs persist both an immutable dated CSV and matching latest CSV', async () => {
   const outputDir = await mkdtemp(join(tmpdir(), 'coffee-csv-'));
   try {
-    const result = await runScrape({ now, outputDir, maxWebsites: 0, fetchImpl: async () => Response.json({ elements: [element()] }) });
+    const result = await runScrape({ now, outputDir, discoverLinks: false, maxWebsites: 0, fetchImpl: async () => Response.json({ elements: [element()] }) });
     assert.equal(result.rowCount, 1);
     assert.match(result.snapshot, /coffee-in-bandung-20261019T010000Z\.csv$/);
     assert.equal(await readFile(result.snapshot, 'utf8'), await readFile(result.latest, 'utf8'));

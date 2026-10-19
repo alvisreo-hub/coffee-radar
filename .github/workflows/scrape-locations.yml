@@ -17,6 +17,8 @@ on:
       - '.github/workflows/scrape-locations.yml'
       - 'scripts/scrape-locations.mjs'
       - 'scripts/scrape-locations.test.mjs'
+      - 'scripts/enrich-links.mjs'
+      - 'scripts/enrich-links.test.mjs'
 
 permissions:
   contents: write
@@ -28,7 +30,7 @@ concurrency:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:
@@ -38,11 +40,12 @@ jobs:
         with:
           node-version: '22'
       - name: Test scraper
-        run: node --test scripts/scrape-locations.test.mjs
+        run: node --test scripts/scrape-locations.test.mjs scripts/enrich-links.test.mjs
       - name: Scrape locations and write CSV files
         env:
           SCRAPE_KEYWORD: ${{ inputs.keyword || 'coffee in Bandung' }}
-        run: node scripts/scrape-locations.mjs --keyword "$SCRAPE_KEYWORD" --output-dir data/scrapes --max-websites 20
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+        run: node scripts/scrape-locations.mjs --keyword "$SCRAPE_KEYWORD" --output-dir data/scrapes
       - name: Upload CSV snapshot
         uses: actions/upload-artifact@v4
         with:

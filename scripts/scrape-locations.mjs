@@ -1,16 +1,18 @@
 import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
-import { mkdir, rename, writeFile } from 'node:fs/promises';
+import { mkdir, rename, writeFile, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { metadata, robotsAllows } from '../worker/index.js';
+import { instagramUrl, parseCsv } from '../lib/catalog.mjs';
+import { CONTACT_COLUMNS, enrichContactLinks, createSearchClient, extractInstagramLinks } from './enrich-links.mjs';
 
 export const DEFAULT_KEYWORD = 'coffee in Bandung';
 export const CSV_COLUMNS = [
   'keyword', 'name', 'address', 'latitude', 'longitude', 'website', 'phone',
   'opening_hours', 'neighborhood', 'city', 'internet_access', 'outdoor_seating', 'wheelchair', 'source', 'source_id', 'source_url', 'geographic_scope',
   'website_title', 'website_description', 'website_scrape_status', 'website_error',
-  'scraped_at_utc', 'license',
+  ...CONTACT_COLUMNS, 'scraped_at_utc', 'license',
 ];
 const USER_AGENT = 'CoffeeRadar/1.0 (+https://github.com/alvisreo-hub/coffee-radar)';
 const ENDPOINTS = [
@@ -103,6 +105,9 @@ export function normalizeLocations(elements, { keyword = DEFAULT_KEYWORD, now = 
       ].filter(Boolean).join(', '),
       latitude, longitude,
       website: tags.website || tags['contact:website'] || '',
+      instagram_url: instagramUrl(tags['contact:instagram'] || tags.instagram || ''),
+      instagram_source_url: tags['contact:instagram'] || tags.instagram ? 'https://www.openstreetmap.org/' + id : '',
+      instagram_confidence: tags['contact:instagram'] || tags.instagram ? 'mapped' : '',
       phone: tags.phone || tags['contact:phone'] || '',
       opening_hours: tags.opening_hours || '',
       neighborhood: tags['addr:suburb'] || tags['addr:district'] || '',
@@ -213,8 +218,9 @@ export async function scrapeWebsite(value, options = {}) {
       await response.body?.cancel();
       return { website_scrape_status: 'not_html', website_error: 'Website does not return HTML.' };
     }
-    const details = metadata(await readBounded(response));
-    return { website_title: details.title, website_description: details.description, website_scrape_status: 'ok', website_error: '' };
+    const pageHtml = await readBounded(response);
+    const details = metadata(pageHtml);
+    return { instagram_links: extractInstagramLinks(pageHtml, url.href), website_title: details.title, website_description: details.description, website_scrape_status: 'ok', website_error: '' };
   } catch (error) {
     return { website_scrape_status: 'failed', website_error: error.message };
   }
@@ -268,7 +274,17 @@ export async function runScrape(options = {}) {
   const now = options.now || new Date();
   const keyword = options.keyword || DEFAULT_KEYWORD;
   const rows = await discoverLocations({ ...options, keyword, now });
-  await enrichLocations(rows, options);
+  if (options.discoverLinks === false) { await enrichLocations(rows, options); }
+  else {
+    let previousRows=[];
+    try { previousRows=parseCsv(await readFile(resolve(options.outputDir||'data/scrapes','latest.csv'),'utf8')); }
+    catch(error){if(error.code!=='ENOENT')options.onProgress?.('Previous contact cache could not be read: '+error.message);}
+    const referenceRows=JSON.parse(await readFile(new URL('../work/seed.json',import.meta.url),'utf8'));
+    const stats=await enrichContactLinks(rows,{...options,now,previousRows,referenceRows,
+      searchWeb:options.searchWeb||createSearchClient({fetchImpl:options.fetchImpl||fetch,wait:options.wait}),
+      scrapeWebsite:url=>scrapeWebsite(url,options)});
+    options.onProgress?.('Contact enrichment summary: '+JSON.stringify(stats));
+  }
   return writeCsvFiles(rows, { ...options, now });
 }
 
