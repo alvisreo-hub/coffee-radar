@@ -29,7 +29,7 @@ Open http://127.0.0.1:4173. The deployable Cloudflare Worker is `dist/server/ind
 
 Set `GOOGLE_PLACES_API_KEY` as a secret in the production hosting runtime, then redeploy. Enable Places API (New) and the required billing/API permissions in your Google Cloud account. Never place a key in the HTML or tracked configuration. Without this key, the application reports Google Places as unconnected.
 
-Instagram and TikTok **are not connected**. Instagram links are ordinary links, not API access. Live social ingestion requires supported provider APIs, access tokens, account scopes, and an implemented authorized ingestion pipeline. No social crawling or sales-volume collection is claimed.
+Instagram profile links are discovered from map contact tags, business websites, editorial references, and web search results, then stored in the CSV with evidence and confidence. Instagram and TikTok content APIs remain unconnected: this collects public profile links, not private posts, engagement analytics, or sales data.
 
 Public-web requests follow same-domain HTTPS redirects only, have time and body-size limits, and respect wildcard/specific robots.txt rules. Web metadata and OSM discovery responses may be cached for six hours by the production Worker Cache API. The UI logs actual attempts. Public APIs and websites can block or rate-limit requests; a failed fetch is reported without inventing successful results. A weekly location-to-CSV crawler is configured in GitHub Actions (see below).
 
@@ -59,15 +59,12 @@ repository activity ([GitHub schedule documentation](https://docs.github.com/en/
 Default keyword: **coffee in Bandung**. No API key, npm install, or paid search
 service is required. The keyword maps to cafe/coffee-shop categories in Bandung
 on OpenStreetMap; this does not scrape Google's search UI or social media.
-All available locations returned by OpenStreetMap are collected without a result cap. Up to 20 distinct public business websites
-are checked for title and description, with robots.txt, request timeouts, bounded
+All available locations returned by OpenStreetMap are collected without a result cap. Public business websites are checked for title, description, and Instagram links, with robots.txt, request timeouts, bounded
 response sizes, public-address validation, and sequential requests.
 
 ```sh
 npm run scrape:locations
-npm run scrape:locations -- --keyword "coffee in Bandung" --max-websites 20
-# Discover locations without fetching business websites:
-npm run scrape:locations -- --max-websites 0
+npm run scrape:locations -- --keyword "coffee in Bandung"
 ```
 
 Run this function from another Node script:
@@ -77,7 +74,6 @@ import { runScrape } from './scripts/scrape-locations.mjs';
 const result = await runScrape({
   keyword: 'coffee in Bandung',
   outputDir: 'data/scrapes',
-  maxWebsites: 20,
 });
 console.log(result.snapshot, result.latest, result.rowCount);
 ```
@@ -106,8 +102,7 @@ A source/status timestamp is visible in the catalog. Invalid source IDs or
 coordinates are rejected; unnamed valid OSM records remain as unnamed cafes.
 
 All CSV rows are considered; there is no location slicing in discovery, catalog
-import, API responses, search, map lists, or CSV download. Website enrichment has
-a separate per-run budget of 20 sites and never removes a location from the CSV.
+import, API responses, search, map lists, or CSV download. The scheduled contact discovery visits every identified location, with cached search queries, three workers, and rate-limited search requests. Website failures never remove a location from the CSV.
 OpenStreetMap is a community dataset and may omit real businesses or misclassify
 cafes. “All available” means all matching records returned by that source, not an
 assertion that every operating coffee shop in Bandung has been independently found.
@@ -116,3 +111,45 @@ Bandung's administrative boundary uses OSM relation
 [13290062](https://www.openstreetmap.org/relation/13290062), also linked by
 [Wikidata](https://www.wikidata.org/wiki/Q10389). If that boundary query cannot
 complete, the wider fallback box is explicitly recorded in every row.
+
+## Per-shop website and Instagram enrichment
+
+The existing Monday 08:00 WIB workflow now includes contact discovery before it
+writes CSV files. No extra schedule is created. Each identified shop is checked
+for OSM `contact:instagram`/`instagram` and `website`/`contact:website` tags;
+business websites are inspected for matching Instagram profile links; missing
+links are looked up using the shop name, neighborhood, and Bandung context.
+Unnamed cafes are preserved with `insufficient_identity` rather than guessed links.
+
+Search defaults to Bing's public RSS search feed. Optionally configure a
+`BRAVE_SEARCH_API_KEY` repository Actions secret to use Brave Search's supported
+API instead. The code never stores that key in the CSV, source, or build. A search
+provider returning 403 or 429 is paused for that run, with per-row failure status;
+there is no CAPTCHA bypass or proxy rotation. Weekly runs retry unresolved rows.
+Existing contact data survives network failures. Positive matches checked within
+six days are reused, and identical search queries/websites are cached within a run.
+
+New CSV columns: `instagram_url`, `instagram_source_url`, `instagram_confidence`,
+`website_source_url`, `website_confidence`, `link_lookup_status`,
+`link_lookup_error`, `link_checked_at`, `link_search_query`, `link_candidates_json`.
+Website metadata columns remain present. Discovery uses `mapped`,
+`editorial_reference`, `website_link`, `search_match`, and `candidate`, `directory_reference`, `web_reference`, and `brand_reference` evidence
+labels. A search result is not proof of account ownership: the UI visibly labels
+search matches and candidates as needing confirmation, links to evidence, and
+shows the last check time. Directory pages are never labeled as official business websites; matching listings can supply attributed Instagram or website references. Links to Instagram posts, reels, login pages, lookalike domains, or
+non-web schemes are rejected.
+
+The website detail panel displays these contact links and their sources,
+including alternative candidates and unresolved lookup states. It receives CSV
+updates through the existing shared catalog refresh without redeploying.
+
+
+Initial enrichment also uses targeted public-web research saved in
+`data/contact-references.json`. These references are keyed by OSM object ID and
+business name, retain their evidence URL, and are reapplied by the same scheduled
+scraper. Brand contacts are labeled as shared brand accounts/sites; uncertain
+branch matches remain candidates. Explicit identity corrections retain displaced
+links as candidates rather than silently discarding their provenance. The
+initial CSV includes contact references for 196 of 490 locations: 190 listings
+have Instagram URLs and 86 have websites (counts overlap and include brand-level
+links). Missing or uncertain contacts remain visible as such.

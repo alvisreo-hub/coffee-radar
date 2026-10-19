@@ -55,3 +55,17 @@ test('matching business-directory pages provide attributed profile evidence, not
  const rows=[row()];await enrichContactLinks(rows,{now,searchWeb:async()=>({results:[{title:'Kopi Cerita, Bandung',url:'https://www.semuabis.com/kopi-cerita',description:'Bandung coffee shop'}]}),scrapeWebsite:async()=>({website_scrape_status:'ok',website_title:'Kopi Cerita, Bandung',instagram_links:['https://www.instagram.com/kopicerita/'],website_links:[]})});
  assert.equal(rows[0].instagram_url,'https://www.instagram.com/kopicerita/');assert.equal(rows[0].instagram_confidence,'directory_reference');assert.equal(rows[0].instagram_source_url,'https://www.semuabis.com/kopi-cerita');
 });
+
+test('saved researched references fill missing contacts and keep branch-specific accounts as candidates',async()=>{
+ const {applyContactReferences}=await import('./enrich-links.mjs');
+ const rows=[row(1),row(2)];applyContactReferences(rows,[{source_id:'node/1',name:'Kopi Cerita',instagram_url:'https://instagram.com/kopicerita',source_url:'https://source.example/coffee',confidence:'web_reference',website:'https://kopicerita.example',website_confidence:'brand_reference',note:'Akun merek.'},{source_id:'node/2',name:'Kopi Cerita',instagram_url:'https://instagram.com/kopicerita_jakarta',confidence:'candidate'}],{now});
+ assert.equal(rows[0].instagram_confidence,'web_reference');assert.equal(rows[0].website,'https://kopicerita.example/');assert.equal(rows[0].link_reference_note,'Akun merek.');
+ assert.equal(rows[1].instagram_url,'');assert.equal(JSON.parse(rows[1].link_candidates_json)[0].confidence,'candidate');
+});
+
+test('an explicit reviewed identity correction preserves the old website as a candidate',async()=>{
+ const {applyContactReferences}=await import('./enrich-links.mjs');
+ const rows=[row(1,{website:'https://wrong-country.example',instagram_url:'https://instagram.com/wrong_account'})];
+ applyContactReferences(rows,[{source_id:'node/1',name:'Kopi Cerita',instagram_url:'https://instagram.com/correct_account',source_url:'https://local.example/coffee',confidence:'web_reference',replace_instagram:true,rejected_website_host:'wrong-country.example'}],{now});
+ assert.equal(rows[0].website,'');assert.equal(rows[0].instagram_url,'https://www.instagram.com/correct_account/');assert.equal(JSON.parse(rows[0].link_candidates_json)[0].url,'https://wrong-country.example');
+});

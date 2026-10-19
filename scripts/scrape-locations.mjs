@@ -280,7 +280,8 @@ export async function runScrape(options = {}) {
     try { previousRows=parseCsv(await readFile(resolve(options.outputDir||'data/scrapes','latest.csv'),'utf8')); }
     catch(error){if(error.code!=='ENOENT')options.onProgress?.('Previous contact cache could not be read: '+error.message);}
     const referenceRows=JSON.parse(await readFile(new URL('../work/seed.json',import.meta.url),'utf8'));
-    const stats=await enrichContactLinks(rows,{...options,now,previousRows,referenceRows,
+    let contactReferences=[];try{contactReferences=JSON.parse(await readFile(new URL('../data/contact-references.json',import.meta.url),'utf8'));}catch(error){if(error.code!=='ENOENT')throw error;}
+    const stats=await enrichContactLinks(rows,{...options,now,previousRows,referenceRows,contactReferences,
       searchWeb:options.searchWeb||createSearchClient({fetchImpl:options.fetchImpl||fetch,wait:options.wait}),
       scrapeWebsite:url=>scrapeWebsite(url,options)});
     options.onProgress?.('Contact enrichment summary: '+JSON.stringify(stats));

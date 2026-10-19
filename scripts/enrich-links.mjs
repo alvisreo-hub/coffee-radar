@@ -3,7 +3,7 @@ import { instagramUrl, websiteUrl } from '../lib/catalog.mjs';
 export const CONTACT_COLUMNS = [
   'instagram_url','instagram_source_url','instagram_confidence',
   'website_source_url','website_confidence','link_lookup_status','link_lookup_error',
-  'link_checked_at','link_search_query','link_candidates_json',
+  'link_checked_at','link_search_query','link_candidates_json','link_reference_note',
 ];
 const IGNORE_HOSTS = /(^|\.)(facebook\.com|tiktok\.com|youtube\.com|tripadvisor\.[a-z.]+|restaurantguru\.com|pergikuliner\.com|google\.[a-z.]+|bing\.com|waze\.com|openstreetmap\.org|wanderlog\.com|foodierate\.com|gofood\.co\.id|grab\.com|pinterest\.[a-z.]+|caribisnis\.id|bdgcafe\.com|idntimes\.com|kompas\.com|detik\.com|traveloka\.com|linktr\.ee)$/i;
 const waitDefault = ms => new Promise(r=>setTimeout(r,ms));
@@ -61,6 +61,7 @@ export function selectSearchLinks(row, results) {
     const kind=profile?'instagram':'website';
     // A search hit alone is a candidate, not proof that it is the shop's official account.
     if(!nameMatches(row.name,result.title+' '+url.hostname+' '+(profile||'')))continue;
+    if(!/coffee|kopi|cafe|kafe|roastery|coffeenery/i.test(result.title+' '+result.description))continue;
     const local=/\bbandung\b/i.test(result.title+' '+result.description+' '+url.pathname);
     const candidate={type:kind,url:profile||url.href,title:result.title,source_url:result.url,confidence:local?'search_match':'candidate'};
     if(!candidates.some(c=>c.url===candidate.url))candidates.push(candidate);
@@ -96,9 +97,28 @@ export function preserveContactData(rows, previous=[]) {
   }return rows;
 }
 
+export function applyContactReferences(rows,references,{now=new Date()}={}) {
+ const lookup=new Map(references.map(r=>[r.source_id,r]));
+ for(const row of rows){const ref=lookup.get(row.source_id);if(!ref||key(ref.name)!==key(row.name))continue;
+  let candidates=[];try{candidates=JSON.parse(row.link_candidates_json||'[]');if(!Array.isArray(candidates))candidates=[];}catch{}
+  const add=(url,type,source,title)=>{if(url&&!candidates.some(c=>c.url===url))candidates.push({url,type,source_url:source,title,confidence:'candidate'});};
+  const profile=instagramUrl(ref.instagram_url);
+  if(ref.confidence==='candidate')add(profile,'instagram',ref.source_url,ref.title||ref.name);
+  else if(profile&&(!row.instagram_url||ref.replace_instagram)){row.instagram_url=profile;row.instagram_source_url=ref.source_url||'';row.instagram_confidence=ref.confidence;}
+  if(ref.rejected_website_host&&row.website){try{if(new URL(row.website).hostname.replace(/^www\./,'')===ref.rejected_website_host){add(row.website,'website',row.website_source_url||row.source_url,'Sumber peta lama; lokasi bisnis berbeda');row.website='';row.website_source_url='';row.website_confidence='';}}catch{}}
+  if(!row.website&&ref.website){row.website=websiteUrl(ref.website);row.website_source_url=ref.website_source_url||ref.source_url||'';row.website_confidence=ref.website_confidence||ref.confidence;}
+  if(ref.alternate_instagram_url)add(instagramUrl(ref.alternate_instagram_url),'instagram',ref.alternate_source_url,'Akun cabang; perlu konfirmasi alamat');
+  row.link_candidates_json=JSON.stringify(candidates);
+  row.link_reference_note=ref.note||'';
+  if(row.website||row.instagram_url)row.link_lookup_status='found';else if(candidates.length)row.link_lookup_status='candidates_only';
+  row.link_checked_at=ref.checked_at||now.toISOString();
+ }
+ return rows;
+}
+
 export async function enrichContactLinks(rows, {
   searchWeb=createSearchClient(),scrapeWebsite,previousRows=[],now=new Date(),onProgress=()=>{},
-  concurrency=3,referenceRows=[],
+  concurrency=3,referenceRows=[],contactReferences=[],
 }={}) {
   preserveContactData(rows,previousRows);
   const siteCache=new Map();let index=0,done=0;
@@ -118,6 +138,7 @@ export async function enrichContactLinks(rows, {
     const websiteProfile=instagramUrl(row.website);
     if(websiteProfile){if(!row.instagram_url){row.instagram_url=websiteProfile;row.instagram_source_url=row.source_url;row.instagram_confidence='mapped';}row.website='';}
     row.website=websiteUrl(row.website);
+    applyContactReferences([row],contactReferences,{now});
     if(row.website&&!row.website_source_url){row.website_source_url=row.source_url;row.website_confidence='mapped';}
     const reference=referenceRows.find(s=>nameMatches(s.name,row.name)&&Math.hypot((Number(s.lat)-row.latitude)*111000,(Number(s.lng)-row.longitude)*110000)<300);
     if(reference?.social&&!row.instagram_url){row.instagram_url=instagramUrl('@'+reference.social);row.instagram_source_url=reference.source;row.instagram_confidence='editorial_reference';}
@@ -147,7 +168,7 @@ export async function enrichContactLinks(rows, {
         if(!row.instagram_url&&selected.instagram){row.instagram_url=selected.instagram.url;row.instagram_source_url=selected.instagram.source_url;row.instagram_confidence='search_match';}
         if(!row.website&&selected.website){row.website=selected.website.url;row.website_source_url=selected.website.source_url;row.website_confidence='search_match';await inspectSite(row);}
       }
-      row.link_lookup_status=row.website||row.instagram_url?'found':'not_found';
+      row.link_lookup_status=row.website||row.instagram_url?'found':row.link_candidates_json&&row.link_candidates_json!=='[]'?'candidates_only':'not_found';
     }catch(error){row.link_lookup_error=error.message;row.link_lookup_status=row.website||row.instagram_url?'partial':'failed';stats.failed++;}
     row.link_checked_at=now.toISOString();
   }

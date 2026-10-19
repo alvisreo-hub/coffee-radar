@@ -79,3 +79,20 @@ test('bundled website, JSON API, and CSV download contain all saved rows and the
  const html=await (await worker.fetch(new Request('https://coffee.example/'))).text();
  assert.ok(html.includes('osm-node-'));assert.ok(html.includes('refreshCatalog()'));assert.ok(html.includes('/api/catalog.csv'));
 });
+
+test('CSV contact evidence reaches both imported and matched editorial detail records',()=>{
+ const records=[row(1,{name:'Kopi Toko Djawa',latitude:seed[0].lat,longitude:seed[0].lng,
+  instagram_url:'https://instagram.com/kopitokodjawa/?hl=id',instagram_source_url:'https://example.com/about',instagram_confidence:'website_link',
+  website:'https://example.com',website_source_url:'https://example.com/about',website_confidence:'mapped',
+  link_lookup_status:'found',link_checked_at:'2026-10-19T01:00:00Z',
+  link_candidates_json:JSON.stringify([{type:'instagram',url:'https://instagram.com/anotherdjawa',title:'Possible account',confidence:'candidate',source_url:'https://example.com'}])})];
+ const data=catalogFromCsv(seed,toCsv(records));const place=data.shops.find(s=>s.id==='djawa');
+ assert.equal(place.instagramUrl,'https://www.instagram.com/kopitokodjawa/');assert.equal(place.instagramConfidence,'website_link');
+ assert.equal(place.instagramSourceUrl,'https://example.com/about');assert.equal(place.websiteConfidence,'mapped');
+ assert.equal(place.linkLookupStatus,'found');assert.equal(place.contactCandidates[0].confidence,'candidate');
+});
+
+test('unsafe Instagram and candidate links never become detail links',()=>{
+ const places=csvLocations(toCsv([row(1,{instagram_url:'https://instagram.com.evil.example/fake',link_candidates_json:JSON.stringify([{type:'instagram',url:'https://instagram.com/p/post'},{type:'website',url:'javascript:alert(1)'}])})]));
+ assert.equal(places[0].instagramUrl,'');assert.deepEqual(places[0].contactCandidates,[]);
+});
