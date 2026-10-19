@@ -8,7 +8,7 @@ import { metadata, robotsAllows } from '../worker/index.js';
 export const DEFAULT_KEYWORD = 'coffee in Bandung';
 export const CSV_COLUMNS = [
   'keyword', 'name', 'address', 'latitude', 'longitude', 'website', 'phone',
-  'opening_hours', 'source', 'source_id', 'source_url', 'geographic_scope',
+  'opening_hours', 'neighborhood', 'city', 'internet_access', 'outdoor_seating', 'wheelchair', 'source', 'source_id', 'source_url', 'geographic_scope',
   'website_title', 'website_description', 'website_scrape_status', 'website_error',
   'scraped_at_utc', 'license',
 ];
@@ -26,11 +26,14 @@ export function validateKeyword(keyword) {
   return keyword.trim();
 }
 
+// Bandung's OSM boundary relation is linked from https://www.wikidata.org/wiki/Q10389.
+// Resolving a known relation avoids the expensive global administrative-name scan.
 export function buildOverpassQuery({ fallback = false } = {}) {
-  const scope = fallback ? '(-6.970,107.555,-6.845,107.685)' : '(area.bandung)';
-  return '[out:json][timeout:35];' + (fallback ? '' :
-    'area["boundary"="administrative"]["name"~"^(Kota )?Bandung$"]["admin_level"~"^(5|6)$"]->.bandung;') +
-    '(nwr["amenity"="cafe"]' + scope + ';nwr["shop"="coffee"]' + scope + ';);out center tags;';
+  const scope = fallback ? '(-6.995,107.540,-6.825,107.775)' : '(area.bandung)';
+  return '[out:json][timeout:90];' + (fallback ? '' :
+    'rel(13290062);map_to_area->.bandung;') +
+    '(nwr["amenity"="cafe"]' + scope + ';nwr["shop"="coffee"]' + scope +
+    ';nwr["cuisine"="coffee_shop"]' + scope + ';);out center tags;';
 }
 
 export async function readBounded(response, maxBytes = 1_000_000) {
@@ -62,13 +65,13 @@ async function overpass(query, { fetchImpl = fetch, wait = sleep, onProgress = (
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': USER_AGENT },
         body: new URLSearchParams({ data: query }),
-        signal: AbortSignal.timeout(45_000),
+        signal: AbortSignal.timeout(105_000),
       });
       if (!response.ok) {
         const detail = (await readBounded(response, 32_000)).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 400);
         throw new Error('Overpass returned HTTP ' + response.status + (detail ? ': ' + detail : '.'));
       }
-      const data = JSON.parse(await readBounded(response, 5_000_000));
+      const data = JSON.parse(await readBounded(response, 64_000_000));
       if (data.remark) throw new Error('Overpass did not complete the query: ' + data.remark);
       if (!Array.isArray(data.elements)) throw new Error('Overpass returned an invalid locations response.');
       return data.elements;
@@ -88,13 +91,12 @@ export function normalizeLocations(elements, { keyword = DEFAULT_KEYWORD, now = 
     const latitude = element.lat ?? element.center?.lat;
     const longitude = element.lon ?? element.center?.lon;
     if (!['node', 'way', 'relation'].includes(element.type) || !Number.isSafeInteger(element.id) ||
-        typeof tags.name !== 'string' || !tags.name.trim() ||
         !Number.isFinite(latitude) || !Number.isFinite(longitude) ||
         latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) continue;
     const id = element.type + '/' + element.id;
     unique.set(id, {
       keyword,
-      name: tags.name.trim(),
+      name: typeof tags.name === 'string' && tags.name.trim() ? tags.name.trim() : 'Kafe tanpa nama · ' + id,
       address: tags['addr:full'] || [
         [tags['addr:street'], tags['addr:housenumber']].filter(Boolean).join(' '),
         tags['addr:suburb'], tags['addr:city'], tags['addr:postcode'],
@@ -103,6 +105,11 @@ export function normalizeLocations(elements, { keyword = DEFAULT_KEYWORD, now = 
       website: tags.website || tags['contact:website'] || '',
       phone: tags.phone || tags['contact:phone'] || '',
       opening_hours: tags.opening_hours || '',
+      neighborhood: tags['addr:suburb'] || tags['addr:district'] || '',
+      city: tags['addr:city'] || '',
+      internet_access: tags.internet_access || '',
+      outdoor_seating: tags.outdoor_seating || '',
+      wheelchair: tags.wheelchair || '',
       source: 'OpenStreetMap', source_id: id,
       source_url: 'https://www.openstreetmap.org/' + id,
       geographic_scope: geographicScope,
@@ -115,9 +122,8 @@ export function normalizeLocations(elements, { keyword = DEFAULT_KEYWORD, now = 
   return [...unique.values()].sort((a, b) => a.name.localeCompare(b.name, 'id') || a.source_id.localeCompare(b.source_id));
 }
 
-export async function discoverLocations({ keyword = DEFAULT_KEYWORD, maxResults = 100, now = new Date(), ...options } = {}) {
+export async function discoverLocations({ keyword = DEFAULT_KEYWORD, now = new Date(), ...options } = {}) {
   validateKeyword(keyword);
-  if (!Number.isInteger(maxResults) || maxResults < 1 || maxResults > 1000) throw new Error('maxResults must be between 1 and 1000.');
   let elements;
   let areaError;
   let geographicScope = 'Bandung administrative boundary';
@@ -129,7 +135,7 @@ export async function discoverLocations({ keyword = DEFAULT_KEYWORD, maxResults 
     catch (error) { throw new Error((areaError ? areaError.message + ' | Bounding-box fallback: ' : '') + error.message); }
     geographicScope = 'Bandung bounding box; may include neighboring areas';
   }
-  const rows = normalizeLocations(elements, { keyword: keyword.trim(), now, geographicScope }).slice(0, maxResults);
+  const rows = normalizeLocations(elements, { keyword: keyword.trim(), now, geographicScope });
   options.onProgress?.('Discovered ' + rows.length + ' locations.');
   if (!rows.length) throw new Error('No valid coffee locations were returned; existing CSV files have been preserved.');
   return rows;
@@ -267,10 +273,10 @@ export async function runScrape(options = {}) {
 }
 
 function parseOptions(args) {
-  const options = { keyword: DEFAULT_KEYWORD, outputDir: 'data/scrapes', maxResults: 100, maxWebsites: 20 };
+  const options = { keyword: DEFAULT_KEYWORD, outputDir: 'data/scrapes', maxWebsites: 20 };
   for (let i = 0; i < args.length; i++) {
-    const key = { '--keyword': 'keyword', '--output-dir': 'outputDir', '--max-results': 'maxResults', '--max-websites': 'maxWebsites' }[args[i]];
-    if (!key || !args[i + 1]) throw new Error('Usage: npm run scrape:locations -- [--keyword "coffee in Bandung"] [--output-dir data/scrapes] [--max-results 100] [--max-websites 20]');
+    const key = { '--keyword': 'keyword', '--output-dir': 'outputDir', '--max-websites': 'maxWebsites' }[args[i]];
+    if (!key || !args[i + 1]) throw new Error('Usage: npm run scrape:locations -- [--keyword "coffee in Bandung"] [--output-dir data/scrapes] [--max-websites 20]');
     const value = args[++i];
     options[key] = key.startsWith('max') ? Number(value) : value;
   }

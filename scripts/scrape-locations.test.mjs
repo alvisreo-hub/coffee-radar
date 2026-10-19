@@ -22,31 +22,32 @@ test('keywords are validated before querying and geographic filters are bounded'
   assert.equal(validateKeyword('kopi di Bandung'), 'kopi di Bandung');
   assert.throws(() => validateKeyword('coffee in Jakarta'), /Bandung/);
   assert.throws(() => validateKeyword('coffee in Bandung;out;'), /Bandung/);
-  assert.match(buildOverpassQuery(), /area\["boundary"="administrative"\]/);
-  assert.match(buildOverpassQuery({ fallback: true }), /-6\.970,107\.555/);
+  assert.match(buildOverpassQuery(), /rel\(13290062\);map_to_area/);
+  assert.match(buildOverpassQuery({ fallback: true }), /-6\.995,107\.540/);
 });
 
 test('normalization deduplicates source IDs, keeps separate branches, coordinates and provenance', () => {
   const elements = [element(1), element(1), element(2), { ...element(3), lat: 100 }, { ...element(4), tags: {} }];
   const rows = normalizeLocations(elements, { now });
-  assert.equal(rows.length, 2);
-  assert.equal(rows[0].address, 'Jl. Braga 81');
-  assert.equal(rows[0].source_url, 'https://www.openstreetmap.org/node/1');
-  assert.equal(rows[0].scraped_at_utc, now.toISOString());
-  assert.match(rows[0].license, /ODbL/);
-  assert.equal(rows[0].website_scrape_status, 'no_website');
-  assert.equal('rating' in rows[0], false);
+  assert.equal(rows.length, 3);
+  assert.equal(rows.find(r => r.source_id === 'node/1').address, 'Jl. Braga 81');
+  assert.equal(rows.find(r => r.source_id === 'node/1').source_url, 'https://www.openstreetmap.org/node/1');
+  assert.equal(rows.find(r => r.source_id === 'node/1').scraped_at_utc, now.toISOString());
+  assert.match(rows.find(r => r.source_id === 'node/1').license, /ODbL/);
+  assert.equal(rows.find(r => r.source_id === 'node/1').website_scrape_status, 'no_website');
+  assert.equal('rating' in rows.find(r => r.source_id === 'node/1'), false);
+  assert.ok(rows.some(r => r.name.startsWith('Kafe tanpa nama')));
 });
 
-test('discovery sends an Overpass query, limits rows, and marks bbox fallback', async () => {
+test('discovery sends an uncapped Overpass query and marks bbox fallback', async () => {
   const bodies = [];
   const fetchImpl = async (_url, options) => {
     bodies.push(String(options.body));
     return Response.json({ elements: bodies.length === 1 ? [] : [element(1), element(2)] });
   };
-  const rows = await discoverLocations({ now, maxResults: 1, fetchImpl, wait: noWait });
+  const rows = await discoverLocations({ now, fetchImpl, wait: noWait });
   assert.equal(bodies.length, 2);
-  assert.equal(rows.length, 1);
+  assert.equal(rows.length, 2);
   assert.match(rows[0].geographic_scope, /neighboring/);
   assert.match(decodeURIComponent(bodies[0]), /amenity/);
 });
@@ -55,7 +56,6 @@ test('upstream query errors and invalid or empty payloads never count as success
   for (const payload of [{ remark: 'runtime error', elements: [] }, {}, { elements: [] }]) {
     await assert.rejects(discoverLocations({ fetchImpl: async () => Response.json(payload), wait: noWait }), /failed|No valid/);
   }
-  await assert.rejects(discoverLocations({ maxResults: 0 }), /maxResults/);
 });
 
 test('provider failure uses the second documented endpoint', async () => {
@@ -189,4 +189,13 @@ test('an administrative-query outage falls back to a bounded query and labels ev
   assert.equal(queries.length, 3);
   assert.equal(rows.length, 1);
   assert.match(rows[0].geographic_scope, /bounding box/);
+});
+
+
+test('discovery returns every provider location beyond the previous 100 and 1000 caps', async () => {
+  const elements = Array.from({ length: 1205 }, (_, index) => element(index + 1));
+  const rows = await discoverLocations({ now, fetchImpl: async () => Response.json({ elements }) });
+  assert.equal(rows.length, 1205);
+  assert.equal(new Set(rows.map(r => r.source_id)).size, 1205);
+  assert.ok(!buildOverpassQuery().match(/;\s*out\b[^;]*\d+/));
 });

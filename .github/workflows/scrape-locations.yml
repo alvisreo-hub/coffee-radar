@@ -42,7 +42,7 @@ jobs:
       - name: Scrape locations and write CSV files
         env:
           SCRAPE_KEYWORD: ${{ inputs.keyword || 'coffee in Bandung' }}
-        run: node scripts/scrape-locations.mjs --keyword "$SCRAPE_KEYWORD" --output-dir data/scrapes --max-results 100 --max-websites 20
+        run: node scripts/scrape-locations.mjs --keyword "$SCRAPE_KEYWORD" --output-dir data/scrapes --max-websites 20
       - name: Upload CSV snapshot
         uses: actions/upload-artifact@v4
         with:
