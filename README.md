@@ -22,7 +22,7 @@ Open http://127.0.0.1:4173. The deployable Cloudflare Worker is `dist/server/ind
 - Detail dialog, Google Maps directions, social-profile links, sharing, and a responsive OpenStreetMap view.
 - Favorites and crawl activity persist **only in the current browser**. The CSV-backed catalog is shared across devices. Export JSON or download the CSV for a portable snapshot; personal favorites do not synchronize across devices.
 - `POST /api/crawl`: fetches four allowlisted public source pages, checking robots.txt first, and extracts bounded title/description metadata. Each outcome has provenance, a timestamp, and an individual success/failure status. It does not infer menu prices, sentiment, or sales from metadata.
-- `GET /api/catalog`: merges all latest CSV locations with editorial selections. `GET /api/catalog.csv` downloads the full CSV. `POST /api/discover` returns this same shared catalog without a result cap. New community records remain explicitly uncurated.
+- `GET /api/catalog`: merges all latest CSV locations with editorial selections. `GET /api/catalog.csv` downloads the full CSV. `POST /api/discover` returns this same shared catalog without a result cap. CSV records show automatic data curation separately from human editorial selections.
 - `POST /api/google`: calls Google Places Text Search when a server-side secret is configured. Results are displayed as a source log and do not silently replace curated listings.
 
 ## Google Places and social media
@@ -153,3 +153,28 @@ links as candidates rather than silently discarding their provenance. The
 initial CSV includes contact references for 196 of 490 locations: 190 listings
 have Instagram URLs and 86 have websites (counts overlap and include brand-level
 links). Missing or uncertain contacts remain visible as such.
+
+## CSV data curation
+
+The Monday 08:00 WIB workflow runs location discovery and contact enrichment,
+then **curates every row**, then uploads and commits the resulting CSVs. Run
+`npm run curate:locations` to reassess the saved CSV without making internet requests.
+The raw scrape snapshot is retained; `latest.csv` and an additional
+`coffee-in-bandung-curated-<UTC timestamp>.csv` contain the assessment.
+
+Curation adds source-backed facility/contact tags, an Indonesian summary, review
+flags, potential duplicate IDs, a rules version, and a separate curation time.
+`curation_completeness_pct` measures six available facts: name, coordinates,
+address, hours, phone, and a website or Instagram link. It is not a quality score.
+Unknown facts remain unknown. Named locations within 50 metres with the same
+normalized name are flagged as possible duplicates; they are retained for review.
+Distant same-name branches remain separate. Unnamed locations, invalid source
+identity, uncertain contact matches, and geographic fallback records need review.
+Missing addresses, hours, and contacts are also shown as information gaps.
+
+The initial assessment covers all 490 saved rows: 446 listed, 44 needing review.
+All remain in the CSV. The website displays the assessment, information gaps,
+and completeness in each shop detail, with Wi-Fi, outdoor, contact-link, and
+review filters. Human editorial recommendations remain distinct; the curation
+rules do not infer taste, sales rankings, current opening status, or ownership
+of profile links. Historical snapshots retain the data as originally collected.

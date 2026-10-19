@@ -19,13 +19,13 @@ Discovery uses OpenStreetMap cafes and coffee shops in Bandung's administrative
 area. If the administrative-area query fails or returns no results, a Bandung bounding box is
 used and every row states that it may include neighboring areas. The keyword is
 mapped to these location categories; this is not a Google search-results scrape.
-Results are uncurated community data. All matching source locations are saved without a result cap, including unnamed cafes. Every identified location is checked for website and Instagram links using map tags, business website links, and web search. Search and website caches avoid duplicate requests. Website enrichment checks robots.txt and records
+Results are community data assessed by the automatic curation pass after all scraping. All matching source locations are saved without a result cap, including unnamed cafes. Every identified location is checked for website and Instagram links using map tags, business website links, and web search. Search and website caches avoid duplicate requests. Website enrichment checks robots.txt and records
 failures instead of inventing metadata. JavaScript-rendered pages are not rendered.
 
 CSV snapshots are also available as downloadable workflow artifacts for 90 days.
 A failed location-discovery run exits with an error and preserves the previous
 CSV files. Individual business-website failures remain visible in their CSV rows.
-The website automatically loads every valid row from `latest.csv`, combines it with editorial selections, and marks the imported locations as uncurated. Weekly CSV commits become visible without redeploying; the website caches successful CSV reads for ten minutes.
+The website automatically loads every valid row from `latest.csv`, combines it with editorial selections, and shows their automatic curation and any review flags, separate from editorial recommendations. Weekly CSV commits become visible without redeploying; the website caches successful CSV reads for ten minutes.
 
 © OpenStreetMap contributors, [ODbL 1.0](https://www.openstreetmap.org/copyright).
 
@@ -43,3 +43,18 @@ by the scheduled scraper. `web_reference` and `brand_reference` distinguish publ
 references and shared brand contacts. Branch-specific accounts without a matching
 address remain candidates. `link_reference_note` explains the distinction or a
 reviewed identity correction. Profile links do not prove current account ownership.
+
+
+After scraping and contact enrichment, `npm run curate:locations` assesses all
+rows and writes `latest.csv` plus a dated `coffee-in-bandung-curated-*.csv`.
+Original raw and historical snapshots are preserved. No row is removed.
+Curation fields are `curation_status` (`listed` or `needs_review`),
+`curation_categories_json`, `curation_summary`, `curation_flags_json`,
+`curation_completeness_pct`, `curation_evidence_json`,
+`curation_duplicate_ids_json`, `curated_at_utc`, and `curation_version`.
+
+Categories only use explicit source facts, with field-level evidence. Review
+flags distinguish missing information, uncertain contacts, scope, and potential
+duplicates. Completeness is the proportion of six recorded facts (name,
+coordinates, address, hours, phone, and a contact link), not a taste score.
+Taste and bestseller claims are not generated from location metadata.

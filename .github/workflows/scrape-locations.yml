@@ -19,6 +19,9 @@ on:
       - 'scripts/scrape-locations.test.mjs'
       - 'scripts/enrich-links.mjs'
       - 'scripts/enrich-links.test.mjs'
+      - 'scripts/curate-locations.mjs'
+      - 'scripts/curation.test.mjs'
+      - 'lib/curation.mjs'
 
 permissions:
   contents: write
@@ -40,12 +43,14 @@ jobs:
         with:
           node-version: '22'
       - name: Test scraper
-        run: node --test scripts/scrape-locations.test.mjs scripts/enrich-links.test.mjs
+        run: node --test scripts/scrape-locations.test.mjs scripts/enrich-links.test.mjs scripts/curation.test.mjs
       - name: Scrape locations and write CSV files
         env:
           SCRAPE_KEYWORD: ${{ inputs.keyword || 'coffee in Bandung' }}
           BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
         run: node scripts/scrape-locations.mjs --keyword "$SCRAPE_KEYWORD" --output-dir data/scrapes
+      - name: Curate every CSV location after scraping and contact enrichment
+        run: npm run curate:locations
       - name: Upload CSV snapshot
         uses: actions/upload-artifact@v4
         with:
