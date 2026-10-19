@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { metadata, robotsAllows } from '../worker/index.js';
 import { instagramUrl, parseCsv } from '../lib/catalog.mjs';
-import { CONTACT_COLUMNS, enrichContactLinks, createSearchClient, extractInstagramLinks } from './enrich-links.mjs';
+import { CONTACT_COLUMNS, enrichContactLinks, createSearchClient, extractInstagramLinks, extractWebsiteLinks } from './enrich-links.mjs';
 
 export const DEFAULT_KEYWORD = 'coffee in Bandung';
 export const CSV_COLUMNS = [
@@ -220,7 +220,7 @@ export async function scrapeWebsite(value, options = {}) {
     }
     const pageHtml = await readBounded(response);
     const details = metadata(pageHtml);
-    return { instagram_links: extractInstagramLinks(pageHtml, url.href), website_title: details.title, website_description: details.description, website_scrape_status: 'ok', website_error: '' };
+    return { website_links: extractWebsiteLinks(pageHtml, url.href), instagram_links: extractInstagramLinks(pageHtml, url.href), website_title: details.title, website_description: details.description, website_scrape_status: 'ok', website_error: '' };
   } catch (error) {
     return { website_scrape_status: 'failed', website_error: error.message };
   }
@@ -289,10 +289,10 @@ export async function runScrape(options = {}) {
 }
 
 function parseOptions(args) {
-  const options = { keyword: DEFAULT_KEYWORD, outputDir: 'data/scrapes', maxWebsites: 20 };
+  const options = { keyword: DEFAULT_KEYWORD, outputDir: 'data/scrapes' };
   for (let i = 0; i < args.length; i++) {
-    const key = { '--keyword': 'keyword', '--output-dir': 'outputDir', '--max-websites': 'maxWebsites' }[args[i]];
-    if (!key || !args[i + 1]) throw new Error('Usage: npm run scrape:locations -- [--keyword "coffee in Bandung"] [--output-dir data/scrapes] [--max-websites 20]');
+    const key = { '--keyword': 'keyword', '--output-dir': 'outputDir' }[args[i]];
+    if (!key || !args[i + 1]) throw new Error('Usage: npm run scrape:locations -- [--keyword "coffee in Bandung"] [--output-dir data/scrapes]');
     const value = args[++i];
     options[key] = key.startsWith('max') ? Number(value) : value;
   }

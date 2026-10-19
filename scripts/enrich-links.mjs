@@ -14,7 +14,7 @@ function decode(text) {
 const key = text => String(text||'').normalize('NFKD').replace(/\p{M}/gu,'').toLowerCase().replace(/[^a-z0-9]/g,'');
 const generic = new Set(['coffee','kopi','cafe','coffeeshop','shop','and','the','roastery','coffeenery','bandung','café']);
 export function nameMatches(name, text) {
-  const tokens = name.toLowerCase().normalize('NFKD').split(/[^a-z0-9]+/).filter(t=>t.length>1&&!generic.has(t));
+  const tokens = name.toLowerCase().normalize('NFKD').replace(/\p{M}/gu,'').split(/[^a-z0-9]+/).filter(t=>t.length>1&&!generic.has(t));
   if (!tokens.length) return false;
   const haystack=key(text);
   return tokens.every(t=>haystack.includes(t)) && tokens.join('').length>=4;
@@ -29,6 +29,7 @@ export function parseSearchFeed(xml) {
 }
 
 export function extractInstagramLinks(html, pageUrl) {
+  html=html.replace(/\\\//g,'/');
   const found = new Set();
   for (const match of html.matchAll(/(?:href\s*=\s*["']([^"']+)["']|https?:\/\/(?:www\.)?instagram\.com\/[^\s"'<>\\]+)/gi)) {
     let value=decode(match[1]||match[0]).replace(/\\\//g,'/');
@@ -36,6 +37,17 @@ export function extractInstagramLinks(html, pageUrl) {
     const profile=instagramUrl(value);if(profile)found.add(profile);
   }
   return [...found];
+}
+
+export function extractWebsiteLinks(html, pageUrl) {
+  const links=[];
+  for(const m of html.matchAll(/<a\b[^>]*href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    let url;try{url=new URL(decode(m[1]),pageUrl);}catch{continue;}
+    if(!['http:','https:'].includes(url.protocol)||instagramUrl(url.href)||IGNORE_HOSTS.test(url.hostname))continue;
+    if(url.hostname===new URL(pageUrl).hostname)continue;
+    if(/website|official|visit|situs|homepage|https?:|www\./i.test(strip(m[2])))links.push(url.href);
+  }
+  return [...new Set(links)];
 }
 
 export function selectSearchLinks(row, results) {
@@ -114,11 +126,24 @@ export async function enrichContactLinks(rows, {
       await inspectSite(row);
       const recent=row.link_checked_at&&now-new Date(row.link_checked_at)<6*86400000;
       if(!(recent&&(row.website||row.instagram_url))&&(!row.website||!row.instagram_url)){
-        const query='"'+row.name.replaceAll('"','')+'" Bandung '+(row.neighborhood||'')+' instagram official website';
+        const query='"'+row.name.replaceAll('"','')+'" Bandung';
         row.link_search_query=query;
         const result=await searchWeb(query);
         const selected=selectSearchLinks(row,result.results);
         row.link_candidates_json=JSON.stringify(selected.candidates);
+        if(!row.instagram_url&&scrapeWebsite){
+          const directories=result.results.filter(r=>{try{return /(^|\.)(semuabis\.com|wanderlog\.com|caribisnis\.id|bdgcafe\.com|foodierate\.com|pergikuliner\.com|linktr\.ee)$/.test(new URL(r.url).hostname)&&nameMatches(row.name,r.title)&&/bandung/i.test(r.title+' '+r.description)}catch{return false}}).slice(0,2);
+          for(const listing of directories){
+            if(!siteCache.has(listing.url))siteCache.set(listing.url,Promise.resolve(scrapeWebsite(listing.url)));
+            const page=await siteCache.get(listing.url);
+            if(page.website_scrape_status!=='ok'||!nameMatches(row.name,page.website_title))continue;
+            const brandName=row.name.split(/\s+x\s+|\s+-\s+/i)[0];
+            const profiles=(page.instagram_links||[]).filter(url=>nameMatches(brandName,url));
+            if(profiles.length===1){row.instagram_url=profiles[0];row.instagram_source_url=listing.url;row.instagram_confidence='directory_reference';}
+            if(!row.website){const sites=(page.website_links||[]).filter(url=>nameMatches(brandName,new URL(url).hostname));if(sites.length===1){row.website=sites[0];row.website_source_url=listing.url;row.website_confidence='directory_reference';await inspectSite(row);}}
+            if(row.instagram_url&&row.website)break;
+          }
+        }
         if(!row.instagram_url&&selected.instagram){row.instagram_url=selected.instagram.url;row.instagram_source_url=selected.instagram.source_url;row.instagram_confidence='search_match';}
         if(!row.website&&selected.website){row.website=selected.website.url;row.website_source_url=selected.website.source_url;row.website_confidence='search_match';await inspectSite(row);}
       }

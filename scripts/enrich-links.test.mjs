@@ -5,6 +5,7 @@ const now=new Date('2026-10-19T00:00:00Z');
 const row=(id=1,extras={})=>({name:'Kopi Cerita',source_id:'node/'+id,source_url:'https://www.openstreetmap.org/node/'+id,website:'',instagram_url:'',latitude:-6.9,longitude:107.6,...extras});
 const result={title:'Kopi Cerita Bandung (@kopic erita)',url:'https://www.instagram.com/kopicerita/',description:'Coffee shop Bandung, Jalan Braga'};
 test('Instagram normalization accepts profiles and rejects posts, malformed links and other hosts',()=>{
+ assert.equal(instagramUrl('instagram.com/kopicerita'),'https://www.instagram.com/kopicerita/');
  assert.equal(instagramUrl('@Kopi.Cerita'),'https://www.instagram.com/kopi.cerita/');
  assert.equal(instagramUrl('https://instagram.com/kopicerita/?hl=id'),'https://www.instagram.com/kopicerita/');
  for(const url of ['https://instagram.com/p/ABC/','https://instagram.com/reel/XYZ/','https://instagram.com.evil.example/shop/','https://instagram.com/accounts/login/','https://user:password@instagram.com/shop/'])assert.equal(instagramUrl(url),'');
@@ -48,4 +49,9 @@ test('search client uses the public RSS feed without a key, caches identical que
  let calls=0;const search=createSearchClient({wait:async()=>{},apiKey:'',fetchImpl:async url=>{calls++;assert.ok(url.startsWith('https://www.bing.com/search?'));return new Response('<rss><channel/></rss>');}});
  await search('Kopi Cerita Bandung');await search('Kopi Cerita Bandung');assert.equal(calls,1);
  const broken=createSearchClient({wait:async()=>{},apiKey:'',fetchImpl:async()=>new Response('busy',{status:429})});await assert.rejects(broken('Kopi Cerita'),/HTTP 429/);
+});
+
+test('matching business-directory pages provide attributed profile evidence, not a guessed official account',async()=>{
+ const rows=[row()];await enrichContactLinks(rows,{now,searchWeb:async()=>({results:[{title:'Kopi Cerita, Bandung',url:'https://www.semuabis.com/kopi-cerita',description:'Bandung coffee shop'}]}),scrapeWebsite:async()=>({website_scrape_status:'ok',website_title:'Kopi Cerita, Bandung',instagram_links:['https://www.instagram.com/kopicerita/'],website_links:[]})});
+ assert.equal(rows[0].instagram_url,'https://www.instagram.com/kopicerita/');assert.equal(rows[0].instagram_confidence,'directory_reference');assert.equal(rows[0].instagram_source_url,'https://www.semuabis.com/kopi-cerita');
 });
