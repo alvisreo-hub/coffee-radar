@@ -1,0 +1,65 @@
+name: Scrape coffee locations
+
+on:
+  schedule:
+    # Monday 08:00 Asia/Jakarta (WIB = UTC+7).
+    - cron: '0 1 * * 1'
+  workflow_dispatch:
+    inputs:
+      keyword:
+        description: 'Location keyword (Bandung coffee searches)'
+        default: 'coffee in Bandung'
+        required: true
+        type: string
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/scrape-locations.yml'
+      - 'scripts/scrape-locations.mjs'
+      - 'scripts/scrape-locations.test.mjs'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: coffee-location-csv
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test scraper
+        run: node --test scripts/scrape-locations.test.mjs
+      - name: Scrape locations and write CSV files
+        env:
+          SCRAPE_KEYWORD: ${{ inputs.keyword || 'coffee in Bandung' }}
+        run: node scripts/scrape-locations.mjs --keyword "$SCRAPE_KEYWORD" --output-dir data/scrapes --max-results 100 --max-websites 20
+      - name: Upload CSV snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: coffee-in-bandung-${{ github.run_id }}-${{ github.run_attempt }}
+          path: data/scrapes/*.csv
+          if-no-files-found: error
+          retention-days: 90
+      - name: Save CSV files in the repository
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/scrapes/*.csv
+          if git diff --cached --quiet; then
+            echo 'No CSV changes to commit.'
+            exit 0
+          fi
+          git commit -m 'data: refresh coffee in Bandung CSV [skip ci]'
+          # Keep any source changes pushed while the scraper was running.
+          git pull --rebase origin main
+          git push origin HEAD:main

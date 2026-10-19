@@ -6,3 +6,5 @@ work/*
 !work/backend.js
 !work/seed.json
 dist/
+
+data/scrapes/*.tmp
