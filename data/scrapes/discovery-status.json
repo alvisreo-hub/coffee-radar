@@ -1,6 +1,175 @@
 {
-  "checked_at": "2026-10-31T04:10:22.328Z",
-  "queries": [],
+  "checked_at": "2026-10-31T04:11:54.530Z",
+  "queries": [
+    {
+      "query": "coffee shop Braga Bandung",
+      "status": "ok",
+      "results": 10,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "site:tiktok.com coffee cafe Braga Bandung",
+      "status": "ok",
+      "results": 0,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "coffee shop Dago Bandung",
+      "status": "ok",
+      "results": 10,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "site:tiktok.com coffee cafe Dago Bandung",
+      "status": "ok",
+      "results": 10,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "coffee shop Ciumbuleuit Bandung",
+      "status": "ok",
+      "results": 0,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "site:tiktok.com coffee cafe Ciumbuleuit Bandung",
+      "status": "ok",
+      "results": 0,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "coffee shop Cigadung Bandung",
+      "status": "ok",
+      "results": 10,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "site:tiktok.com coffee cafe Cigadung Bandung",
+      "status": "ok",
+      "results": 0,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "coffee shop Antapani Bandung",
+      "status": "ok",
+      "results": 0,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "site:tiktok.com coffee cafe Antapani Bandung",
+      "status": "ok",
+      "results": 10,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "coffee shop Buah Batu Bandung",
+      "status": "ok",
+      "results": 0,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "site:tiktok.com coffee cafe Buah Batu Bandung",
+      "status": "ok",
+      "results": 10,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "coffee shop Ujungberung Bandung",
+      "status": "ok",
+      "results": 0,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "site:tiktok.com coffee cafe Ujungberung Bandung",
+      "status": "ok",
+      "results": 10,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "coffee shop Arcamanik Bandung",
+      "status": "ok",
+      "results": 0,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "site:tiktok.com coffee cafe Arcamanik Bandung",
+      "status": "ok",
+      "results": 0,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "coffee shop Kopo Bandung",
+      "status": "ok",
+      "results": 0,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "site:tiktok.com coffee cafe Kopo Bandung",
+      "status": "ok",
+      "results": 0,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "coffee shop Sukajadi Bandung",
+      "status": "ok",
+      "results": 10,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "site:tiktok.com coffee cafe Sukajadi Bandung",
+      "status": "ok",
+      "results": 0,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "coffee shop Cibiru Bandung",
+      "status": "ok",
+      "results": 0,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "site:tiktok.com coffee cafe Cibiru Bandung",
+      "status": "ok",
+      "results": 0,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "coffee shop Gedebage Bandung",
+      "status": "ok",
+      "results": 0,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "site:tiktok.com coffee cafe Gedebage Bandung",
+      "status": "ok",
+      "results": 0,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "coffee shop Lengkong Bandung",
+      "status": "ok",
+      "results": 0,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "site:tiktok.com coffee cafe Lengkong Bandung",
+      "status": "ok",
+      "results": 10,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "coffee shop Cihapit Bandung",
+      "status": "ok",
+      "results": 0,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    },
+    {
+      "query": "site:tiktok.com coffee cafe Cihapit Bandung",
+      "status": "ok",
+      "results": 0,
+      "checked_at": "2026-10-31T04:11:54.530Z"
+    }
+  ],
   "direct_tiktok": "Not bypassed when robots/login blocks access",
   "added": 0
 }
