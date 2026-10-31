@@ -4,6 +4,8 @@ import { mkdir, rename, writeFile, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { metadata, robotsAllows } from '../worker/index.js';
+import {extractPhotoCandidates} from '../lib/photo-extract.mjs';
+import {PHOTO_COLUMNS,preservePhotoData} from '../lib/photo-fields.mjs';
 import { instagramUrl, parseCsv } from '../lib/catalog.mjs';
 import { CONTACT_COLUMNS, enrichContactLinks, createSearchClient, extractInstagramLinks, extractWebsiteLinks } from './enrich-links.mjs';
 
@@ -12,7 +14,7 @@ export const CSV_COLUMNS = [
   'keyword', 'name', 'address', 'latitude', 'longitude', 'website', 'phone',
   'opening_hours', 'neighborhood', 'city', 'internet_access', 'outdoor_seating', 'wheelchair', 'source', 'source_id', 'source_url', 'geographic_scope',
   'website_title', 'website_description', 'website_scrape_status', 'website_error',
-  ...CONTACT_COLUMNS, 'scraped_at_utc', 'license',
+  ...CONTACT_COLUMNS, ...PHOTO_COLUMNS, 'scraped_at_utc', 'license',
 ];
 const USER_AGENT = 'CoffeeRadar/1.0 (+https://github.com/alvisreo-hub/coffee-radar)';
 const ENDPOINTS = [
@@ -159,7 +161,7 @@ export function isPublicAddress(address) {
   return false;
 }
 
-async function publicUrl(value, lookupImpl = lookup) {
+export async function publicUrl(value, lookupImpl = lookup) {
   const url = new URL(value);
   if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password ||
       url.port && !['80', '443'].includes(url.port)) throw new Error('Unsupported website URL.');
@@ -220,7 +222,7 @@ export async function scrapeWebsite(value, options = {}) {
     }
     const pageHtml = await readBounded(response);
     const details = metadata(pageHtml);
-    return { website_links: extractWebsiteLinks(pageHtml, url.href), instagram_links: extractInstagramLinks(pageHtml, url.href), website_title: details.title, website_description: details.description, website_scrape_status: 'ok', website_error: '' };
+    return { photo_candidates: extractPhotoCandidates(pageHtml,url.href), website_links: extractWebsiteLinks(pageHtml, url.href), instagram_links: extractInstagramLinks(pageHtml, url.href), website_title: details.title, website_description: details.description, website_scrape_status: 'ok', website_error: '' };
   } catch (error) {
     return { website_scrape_status: 'failed', website_error: error.message };
   }
@@ -279,6 +281,7 @@ export async function runScrape(options = {}) {
     let previousRows=[];
     try { previousRows=parseCsv(await readFile(resolve(options.outputDir||'data/scrapes','latest.csv'),'utf8')); }
     catch(error){if(error.code!=='ENOENT')options.onProgress?.('Previous contact cache could not be read: '+error.message);}
+    preservePhotoData(rows,previousRows);
     const referenceRows=JSON.parse(await readFile(new URL('../work/seed.json',import.meta.url),'utf8'));
     let contactReferences=[];try{contactReferences=JSON.parse(await readFile(new URL('../data/contact-references.json',import.meta.url),'utf8'));}catch(error){if(error.code!=='ENOENT')throw error;}
     const stats=await enrichContactLinks(rows,{...options,now,previousRows,referenceRows,contactReferences,

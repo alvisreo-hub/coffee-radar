@@ -22,6 +22,11 @@ on:
       - 'scripts/curate-locations.mjs'
       - 'scripts/curation.test.mjs'
       - 'lib/curation.mjs'
+      - 'scripts/enrich-photos.mjs'
+      - 'scripts/photos.test.mjs'
+      - 'lib/photo-extract.mjs'
+      - 'lib/photo-fields.mjs'
+      - 'data/photo-references.json'
 
 permissions:
   contents: write
@@ -43,12 +48,18 @@ jobs:
         with:
           node-version: '22'
       - name: Test scraper
-        run: node --test scripts/scrape-locations.test.mjs scripts/enrich-links.test.mjs scripts/curation.test.mjs
+        run: node --test scripts/scrape-locations.test.mjs scripts/enrich-links.test.mjs scripts/photos.test.mjs scripts/curation.test.mjs
       - name: Scrape locations and write CSV files
+        # Source pushes reassess saved locations; weekly/manual runs refresh discovery too.
+        if: github.event_name != 'push'
         env:
           SCRAPE_KEYWORD: ${{ inputs.keyword || 'coffee in Bandung' }}
           BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
         run: node scripts/scrape-locations.mjs --keyword "$SCRAPE_KEYWORD" --output-dir data/scrapes
+      - name: Find actual shop photos with source attribution
+        env:
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+        run: npm run photos:locations
       - name: Curate every CSV location after scraping and contact enrichment
         run: npm run curate:locations
       - name: Upload CSV snapshot

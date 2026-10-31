@@ -20,7 +20,15 @@
     "reviews": 4500,
     "lat": -6.9173,
     "lng": 107.6096,
-    "image": "photo-1442512595331-e89e73853f31"
+    "photo": {
+      "url": "https://www.mldspot.com/storage/generated/June2021/Kopi%20Toko%20Djawa2.jpg",
+      "sourceUrl": "https://www.mldspot.com/trending/kopi-toko-djawa-kedai-kopi-ikonik-di-tengah-keramaian-jalan-braga",
+      "credit": "MLDSPOT",
+      "caption": "Bar Kopi Toko Djawa, Jalan Braga 79. Foto dari ulasan tahun 2021; kondisi dapat berubah.",
+      "scope": "branch",
+      "checkedAt": "2026-10-31T03:50:00Z",
+      "license": "Hak cipta sumber; lihat halaman asal"
+    }
   },
   {
     "id": "sawo",
@@ -43,7 +51,15 @@
     "reviews": null,
     "lat": -6.9171,
     "lng": 107.6094,
-    "image": "photo-1554118811-1e0d58224f24"
+    "photo": {
+      "url": "https://storage.googleapis.com/arsitagx-master/img-medium/28058/14486/oi-architect-sawo-coffee1593508763-m.jpeg",
+      "sourceUrl": "https://api.arsitag.com/project/sawo-coffee-2",
+      "credit": "Arsitag / Oi Architect",
+      "caption": "Interior Sawo Coffee & Roastery di Jalan Braga, dokumentasi proyek Oi Architect.",
+      "scope": "branch",
+      "checkedAt": "2026-10-31T03:50:00Z",
+      "license": "Hak cipta sumber; lihat halaman asal"
+    }
   },
   {
     "id": "noah",
@@ -66,7 +82,15 @@
     "reviews": null,
     "lat": -6.8846,
     "lng": 107.6136,
-    "image": "photo-1501339847302-ac426a4a7cbb"
+    "photo": {
+      "url": "https://d1r9hss9q19p18.cloudfront.net/uploads/2019/02/DSC01640.jpg",
+      "sourceUrl": "https://ottencoffee.co.id/majalah/noahs-barn-dayang-sumbi",
+      "credit": "Majalah Otten Coffee",
+      "caption": "Area duduk Noah’s Barn di Jalan Dayang Sumbi 2. Foto ulasan tahun 2019; kondisi dapat berubah.",
+      "scope": "branch",
+      "checkedAt": "2026-10-31T03:50:00Z",
+      "license": "Hak cipta sumber; lihat halaman asal"
+    }
   },
   {
     "id": "sejiwa",
@@ -89,7 +113,15 @@
     "reviews": null,
     "lat": -6.9003,
     "lng": 107.6184,
-    "image": "photo-1521017432531-fbd92d768814"
+    "photo": {
+      "url": "https://jurnalbundaruby.wordpress.com/wp-content/uploads/2023/02/whatsapp-image-2023-02-15-at-19.08.25.jpeg?w=1024",
+      "sourceUrl": "https://jurnalbundaruby.wordpress.com/2023/02/17/sejiwa-coffee-bandung/",
+      "credit": "Bunda Ruby / Jurnal Bunda Ruby",
+      "caption": "Interior Sejiwa Coffee di Jalan Progo 15. Foto pengunjung tahun 2023; kondisi dapat berubah.",
+      "scope": "branch",
+      "checkedAt": "2026-10-31T03:50:00Z",
+      "license": "Hak cipta sumber; lihat halaman asal"
+    }
   },
   {
     "id": "thf",
@@ -112,7 +144,15 @@
     "reviews": null,
     "lat": -6.957,
     "lng": 107.595,
-    "image": "photo-1447933601403-0c6688de566e"
+    "photo": {
+      "url": "https://thfcoffee.com/cdn/shop/files/DSCF7698_1024x1024.jpg?v=1665416610",
+      "sourceUrl": "https://thfcoffee.com/",
+      "credit": "Two Hands Full · website resmi",
+      "caption": "Foto bisnis Two Hands Full dari website resmi. Foto ini tidak mengonfirmasi tampilan roastery Mekar Utama.",
+      "scope": "business",
+      "checkedAt": "2026-10-31T03:50:00Z",
+      "license": "Hak cipta sumber; lihat halaman asal"
+    }
   },
   {
     "id": "5758",
@@ -135,6 +175,14 @@
     "reviews": null,
     "lat": null,
     "lng": null,
-    "image": "photo-1495474472287-4d71bcdd2085"
+    "photo": {
+      "url": "https://1.bp.blogspot.com/-2hw9t_1kGv8/VzhR1Cc76JI/AAAAAAAAPuU/-3UYNLqjC_knuVdOgyxqWXz3J0w8dKTbACKgB/s1600/Coffee%2BLab%2B14.jpg",
+      "sourceUrl": "https://www.dyahprameswarie.com/2016/05/warungkopi-bersenang-senang-dengan-kopi.html",
+      "credit": "Dyah Prameswarie",
+      "caption": "5758 Coffee Lab pada kunjungan tahun 2016. Foto arsip bisnis; lokasi dan tampilan terkini perlu dikonfirmasi.",
+      "scope": "business",
+      "checkedAt": "2026-10-31T03:50:00Z",
+      "license": "Hak cipta sumber; lihat halaman asal"
+    }
   }
 ]

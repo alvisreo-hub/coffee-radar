@@ -8,6 +8,7 @@
     "test": "node --test scripts/*.test.mjs",
     "dev": "node scripts/dev.mjs",
     "scrape:locations": "node scripts/scrape-locations.mjs",
-    "curate:locations": "node scripts/curate-locations.mjs"
+    "curate:locations": "node scripts/curate-locations.mjs",
+    "photos:locations": "node scripts/enrich-photos.mjs"
   }
 }

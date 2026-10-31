@@ -63,5 +63,5 @@ test('CSV curation preserves every row, coordinate, safe text, unknown field, co
 test('weekly workflow curates immediately after all scraping and before upload or commit',async()=>{
  const workflow=await readFile(new URL('../.github/workflows/scrape-locations.yml',import.meta.url),'utf8');
  assert.match(workflow,/cron: '0 1 \* \* 1'/);
- assert.match(workflow,/run: node scripts\/scrape-locations\.mjs[^\n]*\n      - name: Curate every CSV location after scraping and contact enrichment\n        run: npm run curate:locations\n      - name: Upload CSV/);
+ assert.match(workflow,/run: node scripts\/scrape-locations\.mjs[\s\S]*run: npm run photos:locations\n      - name: Curate every CSV location after scraping and contact enrichment\n        run: npm run curate:locations\n      - name: Upload CSV/);
 });
