@@ -8,3 +8,6 @@ work/*
 dist/
 
 data/scrapes/*.tmp
+
+__pycache__/
+*.pyc

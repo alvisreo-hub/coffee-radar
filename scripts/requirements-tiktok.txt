@@ -1,0 +1,3 @@
+# Trial runner only; separate from the Node application and production Worker.
+TikTokApi==7.3.3
+playwright==1.64.1

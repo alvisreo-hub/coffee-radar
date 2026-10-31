@@ -237,3 +237,39 @@ recency is never treated as publication recency. A mention or a publisher's
 `web-locations.csv` preserves promoted venues across subsequent OSM refreshes.
 The initial expansion adds ten address-sourced coffee venues from Nibble's June
 and August 2026 guides and four social discovery leads needing address review.
+
+## Experimental TikTokApi trial
+
+A bounded manual trial uses `davidteather/TikTok-Api` (PyPI TikTokApi 7.3.3)
+and Playwright 1.64.1. This is not enabled in the weekly production pipeline.
+It tries the public hashtags `coffeeshopbandung`, `cafebandung`, and
+`kopibandung`, up to five videos each, with a 100-second overall timeout.
+No account login, residential proxy rotation, CAPTCHA solving or session-token
+input is configured. The inherited environment proxy is preserved.
+
+```sh
+python3 -m venv work/tiktok-venv
+work/tiktok-venv/bin/pip install -r scripts/requirements-tiktok.txt
+# Install the Playwright Chromium browser if there is no system Chromium.
+work/tiktok-venv/bin/python -m playwright install chromium
+work/tiktok-venv/bin/python scripts/tiktok-trial.py
+# For a preinstalled system Chromium:
+work/tiktok-venv/bin/python scripts/tiktok-trial.py --browser /usr/bin/chromium
+python3 -m unittest discover -s scripts -p test_tiktok_trial.py -v
+```
+
+Each run writes its own CSV and status JSON under `data/tiktok-trial/`; failed
+runs never erase the existing catalog or earlier successful exports. Videos
+retain source links, published dates and only metrics actually returned by the
+provider; unknown metrics stay empty. A video is only a discovery lead, pending
+shop identity/address review. Hashtag sampling is not exhaustive discovery and
+does not establish a viral ranking.
+
+The 31 October 2026 trial installed and invoked the library but stopped during
+landing-page navigation with `net::ERR_TUNNEL_CONNECTION_FAILED`. The managed
+Cloud Environment's network policy permits package/Git hosts but does not allow
+`www.tiktok.com`. Zero videos were returned. This diagnoses environment egress,
+not whether TikTok would accept the library after network access is configured.
+To continue the live trial, enable the TikTok destination in Cloud Environment
+network settings through its normal configuration/approval flow, then rerun.
+No cookies or account credentials are needed to resolve this particular block.

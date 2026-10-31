@@ -1,0 +1,21 @@
+{
+  "library": "TikTokApi",
+  "version": "7.3.3",
+  "started_at": "2026-10-31T04:30:09.344225+00:00",
+  "hashtags": [
+    "coffeeshopbandung",
+    "cafebandung",
+    "kopibandung"
+  ],
+  "max_per_hashtag": 5,
+  "status": "environment_network_blocked",
+  "phase": "landing_page",
+  "video_count": 0,
+  "tag_results": [],
+  "environment_allows_tiktok": false,
+  "error_type": "Error",
+  "network_error_code": "net::ERR_TUNNEL_CONNECTION_FAILED",
+  "finished_at": "2026-10-31T04:30:10.742421+00:00",
+  "note": "Environment policy does not allow www.tiktok.com; this result cannot assess TikTok anti-bot behavior.",
+  "csv_file": "tiktok-trial-20261031T043009Z.csv"
+}
