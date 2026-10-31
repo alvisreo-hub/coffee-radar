@@ -216,3 +216,24 @@ without external requests. It retains all existing CSV fields and original scrap
 times, adds a dated photo-enriched snapshot, and atomically replaces `latest.csv`.
 The next curation step writes the final curated snapshot. The live catalog loads
 photo updates from the same shared CSV without requiring a redeploy.
+
+## Expanded discovery and social recommendations
+
+The weekly pipeline now searches 14 Bandung neighborhoods across public web and
+indexed TikTok recommendations (28 queries), after map/contact discovery and before
+photo lookup and curation. Search uses the existing Bing RSS / optional Brave
+provider and records failures in `data/scrapes/discovery-status.json`. All returned
+hits are considered; provider result availability still bounds coverage.
+Dedicated business pages with explicit CafeOrCoffeeShop structured data and a
+Bandung address can enter the catalog. Human-reviewed dated article references
+also enter; coordinates stay missing until sourced, so those places are omitted
+from map markers while remaining searchable in the catalog.
+
+Unresolved search hits are retained in `discovery-candidates.csv`, visible under
+Sumber & kurasi. TikTok Notes / Lemon8 is labeled separately from TikTok. Direct
+robots/login blocks are not bypassed. Unknown post dates remain unknown; crawl
+recency is never treated as publication recency. A mention or a publisher's
+“viral” wording is not a measured viral score. No engagement counts are invented.
+`web-locations.csv` preserves promoted venues across subsequent OSM refreshes.
+The initial expansion adds ten address-sourced coffee venues from Nibble's June
+and August 2026 guides and four social discovery leads needing address review.

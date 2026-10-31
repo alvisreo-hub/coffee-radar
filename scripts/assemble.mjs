@@ -8,9 +8,10 @@ const scriptJson=value=>JSON.stringify(value).replaceAll('<',String.fromCharCode
 const html=(await readFile('work/index.html','utf8')).replace('__SEED__',scriptJson(catalog.shops)).replace('__CATALOG_META__',scriptJson({...catalog,shops:undefined}));
 const catalogCode=await readFile('lib/catalog.mjs','utf8');
 const backend=await readFile('work/backend.js','utf8');
+const discovery=await readFile('data/scrapes/discovery-candidates.csv','utf8');
 const assets={};
 for(const [path,file,type] of [['/assets/dm-sans.woff2','assets/fonts/dm-sans.woff2','font/woff2'],['/assets/manrope.woff2','assets/fonts/manrope.woff2','font/woff2']])assets[path]={type,data:(await readFile(file)).toString('base64')};
-await writeFile('worker/index.js',catalogCode+'\nconst SEED='+JSON.stringify(seed)+';\nconst BUNDLED_CSV='+JSON.stringify(csv)+';\nconst BUNDLED_CATALOG='+JSON.stringify(catalog)+';\nconst ASSETS='+JSON.stringify(assets)+';\nconst HTML='+JSON.stringify(html)+';\n'+backend);
+await writeFile('worker/index.js',catalogCode+'\nconst DISCOVERY_CSV='+JSON.stringify(discovery)+';\nconst SEED='+JSON.stringify(seed)+';\nconst BUNDLED_CSV='+JSON.stringify(csv)+';\nconst BUNDLED_CATALOG='+JSON.stringify(catalog)+';\nconst ASSETS='+JSON.stringify(assets)+';\nconst HTML='+JSON.stringify(html)+';\n'+backend);
 await mkdir('dist/server',{recursive:true});await mkdir('dist/.openai',{recursive:true});
 await copyFile('worker/index.js','dist/server/index.js');await copyFile('.openai/hosting.json','dist/.openai/hosting.json');
 console.log('Built Coffee Radar Worker with embedded responsive UI and local assets.');

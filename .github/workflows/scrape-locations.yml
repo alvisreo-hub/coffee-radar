@@ -26,6 +26,11 @@ on:
       - 'scripts/photos.test.mjs'
       - 'lib/photo-extract.mjs'
       - 'lib/photo-fields.mjs'
+      - 'scripts/discover-web.mjs'
+      - 'scripts/discover-web.test.mjs'
+      - 'lib/web-extract.mjs'
+      - 'data/social-discovery-references.json'
+      - 'data/discovery-references.json'
       - 'data/photo-references.json'
 
 permissions:
@@ -48,7 +53,7 @@ jobs:
         with:
           node-version: '22'
       - name: Test scraper
-        run: node --test scripts/scrape-locations.test.mjs scripts/enrich-links.test.mjs scripts/photos.test.mjs scripts/curation.test.mjs
+        run: node --test scripts/scrape-locations.test.mjs scripts/enrich-links.test.mjs scripts/photos.test.mjs scripts/curation.test.mjs scripts/discover-web.test.mjs
       - name: Scrape locations and write CSV files
         # Source pushes reassess saved locations; weekly/manual runs refresh discovery too.
         if: github.event_name != 'push'
@@ -56,6 +61,10 @@ jobs:
           SCRAPE_KEYWORD: ${{ inputs.keyword || 'coffee in Bandung' }}
           BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
         run: node scripts/scrape-locations.mjs --keyword "$SCRAPE_KEYWORD" --output-dir data/scrapes
+      - name: Expand discovery from local web and indexed TikTok recommendations
+        env:
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+        run: node scripts/discover-web.mjs
       - name: Find actual shop photos with source attribution
         env:
           BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
@@ -73,7 +82,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/scrapes/*.csv
+          git add data/scrapes/*.csv data/scrapes/discovery-status.json
           if git diff --cached --quiet; then
             echo 'No CSV changes to commit.'
             exit 0

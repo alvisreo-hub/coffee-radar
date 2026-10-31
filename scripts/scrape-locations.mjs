@@ -4,6 +4,7 @@ import { mkdir, rename, writeFile, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { metadata, robotsAllows } from '../worker/index.js';
+import {structuredPlaces} from '../lib/web-extract.mjs';
 import {extractPhotoCandidates} from '../lib/photo-extract.mjs';
 import {PHOTO_COLUMNS,preservePhotoData} from '../lib/photo-fields.mjs';
 import { instagramUrl, parseCsv } from '../lib/catalog.mjs';
@@ -222,7 +223,7 @@ export async function scrapeWebsite(value, options = {}) {
     }
     const pageHtml = await readBounded(response);
     const details = metadata(pageHtml);
-    return { photo_candidates: extractPhotoCandidates(pageHtml,url.href), website_links: extractWebsiteLinks(pageHtml, url.href), instagram_links: extractInstagramLinks(pageHtml, url.href), website_title: details.title, website_description: details.description, website_scrape_status: 'ok', website_error: '' };
+    return { structured_places:structuredPlaces(pageHtml,url.href), photo_candidates: extractPhotoCandidates(pageHtml,url.href), website_links: extractWebsiteLinks(pageHtml, url.href), instagram_links: extractInstagramLinks(pageHtml, url.href), website_title: details.title, website_description: details.description, website_scrape_status: 'ok', website_error: '' };
   } catch (error) {
     return { website_scrape_status: 'failed', website_error: error.message };
   }

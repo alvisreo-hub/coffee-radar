@@ -55,6 +55,7 @@ export function photoSecurity(catalog) {
 }
 export default {async fetch(request,env={}){const url=new URL(request.url),path=url.pathname;try{
  if(path.startsWith('/api/')){
+  if(path==='/api/discovery'&&request.method==='GET'){let csv=DISCOVERY_CSV;try{const r=await fetch('https://raw.githubusercontent.com/alvisreo-hub/coffee-radar/main/data/scrapes/discovery-candidates.csv',{signal:AbortSignal.timeout(5000)});if(r.ok)csv=await textLimited(r,4000000);}catch{}return json({candidates:parseCsv(csv),note:'Indexed links are discovery leads; not verified viral rankings.'});}
   if(request.method==='OPTIONS')return new Response(null,{status:204});
   if(path==='/api/status'&&request.method==='GET')return json({google:Boolean(env.GOOGLE_PLACES_API_KEY),instagram:false,tiktok:false,osm:true,web:true});
   if(path==='/api/catalog'&&request.method==='GET'){const {csv,...catalog}=await getCsvCatalog(env);return json(catalog);}
