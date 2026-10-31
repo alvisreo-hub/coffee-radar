@@ -6,6 +6,7 @@ import {join} from 'node:path';
 import {extractPhotoCandidates,selectPagePhoto,enrichPhotos,enrichPhotoCsv,validatePhoto,applyPhotoReferences} from './enrich-photos.mjs';
 import {photoFromRow,photoUrl,parseCsv,catalogFromCsv} from '../lib/catalog.mjs';
 import {preservePhotoData} from '../lib/photo-fields.mjs';
+import worker,{photoSecurity} from '../worker/index.js';
 const now=new Date('2026-10-31T04:00:00Z');
 const row=i=>({source_id:'node/'+i,name:'Kedai Bumi '+i,latitude:-6.9,longitude:107.6,scraped_at_utc:'2026-10-26T01:00:00Z'});
 const ref=i=>({...row(i),photo_url:'https://images.example.com/bumi'+i+'.jpg',photo_source_url:'https://review.example.com/kedai-bumi-'+i+'-bandung',photo_credit:'Review publisher',photo_caption:'Area kedai',photo_scope:'branch',photo_status:'found',photo_checked_at:now.toISOString()});
@@ -65,4 +66,13 @@ test('photo CSV preserves every existing field and reaches catalog without losin
   assert.equal(await readFile(result.snapshot,'utf8'),csv);assert.equal(catalogFromCsv([],csv).photoCount,1);
   assert.equal(catalogFromCsv([],csv).shops[0].photo.sourceUrl,ref(1).photo_source_url);
  }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+test('page image CSP permits specific catalog photo hosts and rejects unrestricted image origins',async()=>{
+ const headers=photoSecurity({shops:[{photo:{url:'https://venue.example.com/room.jpg'}},{photo:{url:'javascript:alert(1)'}}]});
+ const directive=headers['Content-Security-Policy'].split(';').find(s=>s.trim().startsWith('img-src'));
+ assert.ok(directive.includes('https://venue.example.com'));assert.ok(!directive.split(/\s+/).includes('https:'));assert.ok(!directive.includes('*'));
+ const page=await worker.fetch(new Request('https://coffee.example/'),{CATALOG_OFFLINE:true});
+ assert.match(page.headers.get('content-security-policy'),/https:\/\/www\.mldspot\.com/);
+ const html=await page.text();assert.ok(!html.includes('coffee-sheet.jpg'));assert.ok(html.includes('referrerpolicy="no-referrer"'));
 });

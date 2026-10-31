@@ -9,7 +9,7 @@ const html=(await readFile('work/index.html','utf8')).replace('__SEED__',scriptJ
 const catalogCode=await readFile('lib/catalog.mjs','utf8');
 const backend=await readFile('work/backend.js','utf8');
 const assets={};
-for(const [path,file,type] of [['/assets/coffee-sheet.jpg','assets/coffee-sheet.jpg','image/jpeg'],['/assets/dm-sans.woff2','assets/fonts/dm-sans.woff2','font/woff2'],['/assets/manrope.woff2','assets/fonts/manrope.woff2','font/woff2']])assets[path]={type,data:(await readFile(file)).toString('base64')};
+for(const [path,file,type] of [['/assets/dm-sans.woff2','assets/fonts/dm-sans.woff2','font/woff2'],['/assets/manrope.woff2','assets/fonts/manrope.woff2','font/woff2']])assets[path]={type,data:(await readFile(file)).toString('base64')};
 await writeFile('worker/index.js',catalogCode+'\nconst SEED='+JSON.stringify(seed)+';\nconst BUNDLED_CSV='+JSON.stringify(csv)+';\nconst BUNDLED_CATALOG='+JSON.stringify(catalog)+';\nconst ASSETS='+JSON.stringify(assets)+';\nconst HTML='+JSON.stringify(html)+';\n'+backend);
 await mkdir('dist/server',{recursive:true});await mkdir('dist/.openai',{recursive:true});
 await copyFile('worker/index.js','dist/server/index.js');await copyFile('.openai/hosting.json','dist/.openai/hosting.json');

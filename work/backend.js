@@ -48,6 +48,11 @@ async function getCsvCatalog(env = {}) {
 }
 
 const SECURITY={'Content-Type':'text/html; charset=utf-8','X-Content-Type-Options':'nosniff','Referrer-Policy':'strict-origin-when-cross-origin','Permissions-Policy':'camera=(), microphone=(), geolocation=()','Content-Security-Policy':"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self'; img-src 'self' https://images.unsplash.com data:; connect-src 'self'; frame-src https://www.openstreetmap.org; object-src 'none'; base-uri 'none'; form-action 'self'"};
+export function photoSecurity(catalog) {
+ const hosts=[...new Set([...BUNDLED_CATALOG.shops,...(catalog?.shops||[])].map(s=>photoUrl(s.photo?.url)).filter(Boolean).map(u=>new URL(u).origin))].sort();
+ // Permit only the explicit photo origins in our repository-backed catalog.
+ return {...SECURITY,'Content-Security-Policy':SECURITY['Content-Security-Policy'].replace("img-src 'self' https://images.unsplash.com data:","img-src 'self' data:"+(hosts.length?' '+hosts.join(' '):''))};
+}
 export default {async fetch(request,env={}){const url=new URL(request.url),path=url.pathname;try{
  if(path.startsWith('/api/')){
   if(request.method==='OPTIONS')return new Response(null,{status:204});
@@ -76,5 +81,5 @@ export default {async fetch(request,env={}){const url=new URL(request.url),path=
  if(path==='/favicon.ico')return new Response(null,{status:204});
  if(path!=='/')return new Response('Halaman tidak ditemukan',{status:404});
  if(request.method!=='GET'&&request.method!=='HEAD')return new Response('Method not allowed',{status:405});
- return new Response(request.method==='HEAD'?null:HTML,{headers:SECURITY});
+ return new Response(request.method==='HEAD'?null:HTML,{headers:photoSecurity(await getCsvCatalog(env))});
  }catch(e){return json({error:e.name==='TimeoutError'?'Sumber melewati batas waktu. Coba lagi nanti.':e.message||'Terjadi kendala pengambilan data.'},502)}}};

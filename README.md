@@ -39,7 +39,7 @@ All six initial records cite their source in the app and JSON export. Hours, fac
 
 The rating and approximate review count for Kopi Toko Djawa are attributed to Citour, not a direct live Google fetch. Other initial places have no invented rating or review count. Menu suggestions and taste recommendations are editorial references, not direct tasting results.
 
-OpenStreetMap data is © OpenStreetMap contributors, available under ODbL; attribution is retained via the embedded map, source links, and export provenance. Generic cafe photography is illustrative and does not depict the listed businesses. DM Sans and Manrope fonts are bundled under the SIL Open Font License, with licenses included.
+OpenStreetMap data is © OpenStreetMap contributors, available under ODbL; attribution is retained via the embedded map, source links, and export provenance. Catalog photography comes from the cited business or review source. Each photograph has a credit, source link, caption, and branch scope. Shops without a matching photograph show an explicit empty state. DM Sans and Manrope fonts are bundled under the SIL Open Font License, with licenses included.
 
 ## Checks
 
@@ -178,3 +178,41 @@ and completeness in each shop detail, with Wi-Fi, outdoor, contact-link, and
 review filters. Human editorial recommendations remain distinct; the curation
 rules do not infer taste, sales rankings, current opening status, or ownership
 of profile links. Historical snapshots retain the data as originally collected.
+
+
+## Actual shop photographs
+
+`npm run photos:locations` examines all saved CSV rows without a location cap.
+The Monday 08:00 WIB workflow now runs location discovery and contact lookup,
+then photo lookup, then curation, then uploads/commits the CSV. On source pushes,
+it reuses saved locations and refreshes photo evidence/curation without repeating
+location discovery. Manual and scheduled runs refresh discovery as before.
+
+Photo lookup uses saved human-matched references in `data/photo-references.json`,
+business websites and linked review pages, then public web search for missing
+photos. It requires a dedicated matching business page, excludes listicle covers,
+logos, avatars and thumbnails, checks image content type/size and public network
+addresses, and respects the same robots rules as website enrichment. Instagram
+or Google private/provider endpoints are not scraped; no API key is needed for
+public review/website photos. Source blocks are recorded, not bypassed.
+
+Photo fields: `photo_url`, `photo_source_url`, `photo_credit`, `photo_caption`,
+`photo_scope` (`branch` or `business`), `photo_status`, `photo_license`,
+`photo_checked_at`, `photo_lookup_error`, and `photo_candidates_json`.
+Photos and contacts survive later discovery runs and transient network failures.
+The 21-day cache avoids unnecessary downloads. Explicit different-branch photos
+are excluded from reviewed primary references; unconfirmed branch photos visibly
+say that they show the business and need branch confirmation. Historical dates
+remain in captions. Attribution does not imply a public-domain license.
+
+The hero, cards and detail panels render actual sourced images with lazy loading,
+source links and credits. Image failures keep the source link and display a clear
+empty state. No generated illustration or stock cafe is substituted. Photos are
+loaded directly from their source hosts; those hosts can change or block them.
+The existing fixed-height clipped detail banner remains in place.
+
+Use `npm run photos:locations -- --references-only` to apply the reviewed references
+without external requests. It retains all existing CSV fields and original scrape
+times, adds a dated photo-enriched snapshot, and atomically replaces `latest.csv`.
+The next curation step writes the final curated snapshot. The live catalog loads
+photo updates from the same shared CSV without requiring a redeploy.

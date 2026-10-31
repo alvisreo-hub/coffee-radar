@@ -58,3 +58,11 @@ flags distinguish missing information, uncertain contacts, scope, and potential
 duplicates. Completeness is the proportion of six recorded facts (name,
 coordinates, address, hours, phone, and a contact link), not a taste score.
 Taste and bestseller claims are not generated from location metadata.
+
+
+Actual shop photo lookup runs after contact scraping and before curation. Photo
+URLs, source-page attribution, captions, scope, checked timestamps and errors are
+stored in `photo_*` fields. `coffee-in-bandung-photos-*.csv` preserves the photo
+stage; the following curated snapshot is the final `latest.csv`. Missing photos
+remain empty. Business-scope photographs are not represented as verified branch
+photos. Website cards, hero and detail views no longer use the illustration sheet.
