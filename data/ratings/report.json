@@ -1,0 +1,19 @@
+{
+  "checked_at": "2026-11-12T14:38:14.362382+00:00",
+  "csv_rows": 498,
+  "editorial_records_searched": 6,
+  "initial_searches": 494,
+  "follow_up_checks": 251,
+  "csv_status_counts": {
+    "not_found": 193,
+    "needs_branch_review": 270,
+    "address_matched": 25,
+    "insufficient_identity": 10
+  },
+  "notes": [
+    "Rating values come from cited review directories or their search-index excerpts, not a live Google Places API request.",
+    "Candidate values are separate from address-matched rating_value.",
+    "The check date records research time; the underlying platform update date is unknown.",
+    "All original CSV fields and rows were preserved."
+  ]
+}

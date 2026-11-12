@@ -53,7 +53,7 @@ jobs:
         with:
           node-version: '22'
       - name: Test scraper
-        run: node --test scripts/scrape-locations.test.mjs scripts/enrich-links.test.mjs scripts/photos.test.mjs scripts/curation.test.mjs scripts/discover-web.test.mjs
+        run: node --test scripts/scrape-locations.test.mjs scripts/enrich-links.test.mjs scripts/photos.test.mjs scripts/curation.test.mjs scripts/discover-web.test.mjs scripts/ratings.test.mjs
       - name: Scrape locations and write CSV files
         # Source pushes reassess saved locations; weekly/manual runs refresh discovery too.
         if: github.event_name != 'push'
@@ -65,6 +65,8 @@ jobs:
         env:
           BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
         run: node scripts/discover-web.mjs
+      - name: Reapply researched ratings with original check dates
+        run: node scripts/apply-ratings.mjs
       - name: Find actual shop photos with source attribution
         env:
           BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}

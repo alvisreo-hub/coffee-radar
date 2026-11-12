@@ -273,3 +273,15 @@ not whether TikTok would accept the library after network access is configured.
 To continue the live trial, enable the TikTok destination in Cloud Environment
 network settings through its normal configuration/approval flow, then rerun.
 No cookies or account credentials are needed to resolve this particular block.
+
+## Researched ratings
+
+All current CSV locations were individually reviewed for public aggregate rating
+sources on 12 November 2026. `data/scrapes/latest.csv` now contains `rating_*`
+columns; `data/ratings/catalog-ratings.csv` also covers the six editorial seed
+records. Address-matched scores are separated from unverified branch candidates;
+missing ratings are not invented. Source links, platform, review count, lookup
+status, check date and alternatives are recorded. See
+[data/ratings/README.md](data/ratings/README.md) for coverage and limitations.
+The weekly pipeline preserves this evidence with its original research date.
+This CSV enrichment does not change website rating rendering.
